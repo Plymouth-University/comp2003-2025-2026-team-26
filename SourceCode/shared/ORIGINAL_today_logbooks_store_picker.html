@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Today’s Logbooks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif; background:#020617; color:#e5e7eb; }
+    header {
+      position: sticky; top:0; z-index:10;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-bottom:1px solid #1f2937; background:#020617;
+    }
+    h1 { margin:0; font-size:16px; }
+    .sub { font-size:12px; color:#9ca3af; margin-top:2px; }
+    .btn {
+      border-radius:999px; border:1px solid #334155; background:#0b1220; color:#e5e7eb;
+      padding:10px 16px; font-size:15px; min-height:44px; cursor:pointer;
+    }
+    .btn.primary { background:#2563eb; border-color:#2563eb; color:white; }
+    .badge {
+      font-size:13px; padding:8px 14px; border-radius:999px;
+      border:1px solid #374151; background: radial-gradient(circle at top left, #0f172a, #020617);
+      display:inline-flex; align-items:center; gap:6px; min-height:32px;
+    }
+    .badge::before { content:"●"; font-size:10px; color:#6b7280; }
+    .badge.ok { border-color:#16a34a; color:#bbf7d0; background: radial-gradient(circle at top left, rgba(52,211,153,.35), #020617); }
+    .badge.ok::before { color:#4ade80; }
+    .badge.error { border-color:#b91c1c; color:#fecaca; background: radial-gradient(circle at top left, rgba(248,113,113,.35), #020617); }
+    .badge.error::before { color:#f97373; }
+    main { padding:14px; max-width:920px; margin:0 auto; }
+    .card {
+      border:1px solid #1f2937; border-radius:18px; padding:14px;
+      background: radial-gradient(circle at top left, rgba(15,23,42,.9), #020617);
+      box-shadow: 0 18px 50px rgba(15,23,42,0.9);
+    }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .grid { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+    .item {
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      border:1px solid #1f2937; border-radius:18px; padding:12px 14px;
+      background: rgba(2,6,23,0.7);
+      box-shadow: 0 10px 26px rgba(15,23,42,0.8);
+    }
+    .title { font-weight:800; }
+    .meta { font-size:12px; color:#9ca3af; }
+    .pill { font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid #334155; color:#cbd5e1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Today’s Logbooks</h1>
+      <div class="sub" id="storeLine">Store: (loading)</div>
+    </div>
+    <div class="row">
+      <span id="status" class="badge">Initialising…</span>
+      <button id="backBtn" class="btn">⬅ Back</button>
+      <button id="refreshBtn" class="btn">↻ Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div class="title" id="dateLine">Date: (loading)</div>
+          <div class="meta">This page uses store assignments (rules) to generate today’s logbook instances.</div>
+        </div>
+        <button id="generateBtn" class="btn primary">Generate today’s logbooks</button>
+      </div>
+    </div>
+
+    <div class="grid" id="list"></div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc, getDoc, getDocs, setDoc, query, where, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD--9gIymq-tT-o9CGp32W7GFtgXuGQeJymq-tT-o9CGp32W7GFtgXuGQeJw".replace("AIzaSyD--9gIymq-tT-o9CGp32W7GFtgXuGQeJymq-tT-o9CGp32W7GFtgXuGQeJw","AIzaSyD--9gIymq-tT-o9CGp32W7GFtgXuGQeJw"),
+      authDomain: "dradanddrop-bb7c5.firebaseapp.com",
+      projectId: "dradanddrop-bb7c5",
+      storageBucket: "dradanddrop-bb7c5.firebasestorage.app",
+      messagingSenderId: "907742522220",
+      appId: "1:907742522220:web:4fd124ca048626c9e1e149",
+      measurementId: "G-W83330W3GJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const statusEl = document.getElementById("status");
+    const storeLine = document.getElementById("storeLine");
+    const dateLine = document.getElementById("dateLine");
+    const listEl = document.getElementById("list");
+    const backBtn = document.getElementById("backBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const generateBtn = document.getElementById("generateBtn");
+
+    const HOME_PAGE = "templates_home_tablet_v4_assignments.html";
+    const FILL_PAGE = "full_firestore_fill_and_pdf_v4_auto_days.html"; // will open with templateId + instanceId
+
+    const params = new URLSearchParams(location.search);
+    const storeId = params.get("storeId");
+
+    function setStatus(msg, kind="info") {
+      statusEl.textContent = msg;
+      statusEl.classList.remove("ok","error");
+      if (kind === "ok") statusEl.classList.add("ok");
+      if (kind === "error") statusEl.classList.add("error");
+    }
+
+    backBtn.addEventListener("click", () => location.href = HOME_PAGE);
+    refreshBtn.addEventListener("click", () => loadToday());
+
+    if (!storeId) {
+      // Store picker mode (no storeId in URL)
+      storeLine.textContent = "Store: (choose a store)";
+      setStatus("Pick a store to continue", "error");
+
+      const pickerCard = document.createElement("div");
+      pickerCard.className = "card";
+      pickerCard.innerHTML = `
+        <div class="title">Select a store</div>
+        <div class="meta" style="margin-top:6px;">This page needs to know which store you are viewing. Choose one below.</div>
+        <div class="row" style="margin-top:12px;">
+          <select id="pickerSelect" class="btn" style="min-width:240px; text-align:left;"></select>
+          <button id="pickerGo" class="btn primary">Continue</button>
+        </div>
+      `;
+      listEl.innerHTML = "";
+      listEl.appendChild(pickerCard);
+
+      const selectEl = pickerCard.querySelector("#pickerSelect");
+      const goBtn = pickerCard.querySelector("#pickerGo");
+      selectEl.innerHTML = `<option value="">Loading stores…</option>`;
+
+      (async () => {
+        try {
+          const snap = await getDocs(collection(db, "stores"));
+          const items = [];
+          snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+          items.sort((a,b) => String(a.name||a.id).localeCompare(String(b.name||b.id)));
+
+          if (!items.length) {
+            selectEl.innerHTML = `<option value="">No stores found</option>`;
+            setStatus("No stores in Firestore yet (create one on Home).", "error");
+            return;
+          }
+
+          selectEl.innerHTML = `<option value="">Select store…</option>` + items.map(s => {
+            const name = s.name ? `${s.name} (${s.id})` : s.id;
+            return `<option value="${s.id}">${name}</option>`;
+          }).join("");
+
+          setStatus("Select a store", "ok");
+        } catch (e) {
+          console.error(e);
+          selectEl.innerHTML = `<option value="">Failed to load stores</option>`;
+          setStatus("Failed to load stores (check Firestore rules).", "error");
+        }
+      })();
+
+      goBtn.addEventListener("click", () => {
+        const chosen = selectEl.value;
+        if (!chosen) {
+          setStatus("Pick a store first", "error");
+          return;
+        }
+        location.href = `today_logbooks.html?storeId=${encodeURIComponent(chosen)}`;
+      });
+
+      generateBtn.disabled = true;
+      refreshBtn.disabled = true;
+
+      throw new Error("Missing storeId (picker shown)");
+    }
+
+    const today = new Date();
+    const todayISO = today.toISOString().slice(0,10); // YYYY-MM-DD
+    dateLine.textContent = "Date: " + todayISO;
+    storeLine.textContent = "Store: " + storeId;
+
+    async function ensureTodayInstances() {
+      setStatus("Generating…");
+      // Load rules for this store
+      const rulesQ = query(collection(db, "store_template_rules"), where("storeId","==", storeId));
+      const rulesSnap = await getDocs(rulesQ);
+
+      if (rulesSnap.empty) {
+        setStatus("No assignments for this store.", "error");
+        return;
+      }
+
+      for (const rDoc of rulesSnap.docs) {
+        const r = rDoc.data();
+        const templateId = r.templateId;
+        if (!templateId) continue;
+
+        const instanceId = `${storeId}__${templateId}__${todayISO}`;
+        await setDoc(doc(db, "logbook_instances", instanceId), {
+          storeId,
+          templateId,
+          templateName: r.templateName || null,
+          date: todayISO,
+          status: "not_started",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+
+      setStatus("Generated/updated.", "ok");
+    }
+
+    function renderItem(inst) {
+      const div = document.createElement("div");
+      div.className = "item";
+
+      const left = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "title";
+      title.textContent = inst.templateName || "Logbook";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `TemplateId: ${inst.templateId} • InstanceId: ${inst.id}`;
+      left.appendChild(title);
+      left.appendChild(meta);
+
+      const right = document.createElement("div");
+      right.className = "row";
+
+      const pill = document.createElement("span");
+      pill.className = "pill";
+      pill.textContent = inst.status || "not_started";
+
+      const btn = document.createElement("button");
+      btn.className = "btn primary";
+      btn.textContent = "Open";
+      btn.addEventListener("click", () => {
+        // Open fill page. We pass both: instanceId + templateId (so older fill pages still work)
+        location.href = `${FILL_PAGE}?instanceId=${encodeURIComponent(inst.id)}&templateId=${encodeURIComponent(inst.templateId)}&storeId=${encodeURIComponent(storeId)}&date=${encodeURIComponent(todayISO)}`;
+      });
+
+      right.appendChild(pill);
+      right.appendChild(btn);
+
+      div.appendChild(left);
+      div.appendChild(right);
+      return div;
+    }
+
+    async function loadToday() {
+      setStatus("Loading…");
+      listEl.innerHTML = "";
+
+      // Load store name (optional)
+      const storeDoc = await getDoc(doc(db, "stores", storeId));
+      if (storeDoc.exists()) {
+        const d = storeDoc.data();
+        storeLine.textContent = "Store: " + (d.name ? `${d.name} (${storeId})` : storeId);
+      }
+
+      const qInst = query(
+        collection(db, "logbook_instances"),
+        where("storeId","==", storeId),
+        where("date","==", todayISO)
+      );
+      const instSnap = await getDocs(qInst);
+
+      if (instSnap.empty) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.innerHTML = `<div class="title">No logbooks for today yet</div><div class="meta">Tap “Generate today’s logbooks” to create them from the store assignments.</div>`;
+        listEl.appendChild(empty);
+        setStatus("No instances yet.", "error");
+        return;
+      }
+
+      const items = instSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a,b) => String(a.templateName||"").localeCompare(String(b.templateName||"")));
+      items.forEach(x => listEl.appendChild(renderItem(x)));
+
+      setStatus("Loaded " + items.length, "ok");
+    }
+
+    generateBtn.addEventListener("click", async () => {
+      try {
+        await ensureTodayInstances();
+        await loadToday();
+      } catch (e) {
+        console.error(e);
+        setStatus("Failed (check Firestore rules).", "error");
+      }
+    });
+
+    // Initial load
+    setStatus("Ready");
+    loadToday();
+  </script>
+</body>
+</html>
