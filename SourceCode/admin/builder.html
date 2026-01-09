@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin • Logbook Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin:0; display:flex; height:100vh; background:#f8f9fa; color:#212529; -webkit-user-select:none; user-select:none; }
+    #toolbox { width:300px; background:#ffffff; border-right:1px solid #dee2e6; padding:18px; box-sizing:border-box; overflow-y:auto; box-shadow: 2px 0 4px rgba(0,0,0,0.1); }
+    #toolbox h1 { margin:0 0 6px; font-size:20px; }
+    #toolbox .sub { margin:0 0 14px; font-size:12px; color:#6c757d; }
+    #toolbox h2 { margin:18px 0 10px; font-size:12px; color:#6c757d; text-transform:uppercase; letter-spacing:.08em; }
+    .toolbox-item { background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; cursor:grab; touch-action:none; font-size:16px; transition: box-shadow 0.2s; }
+    .toolbox-item:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .toolbox-item:active { cursor:grabbing; }
+    .toolbox-item .pill { font-size:12px; padding:2px 10px; border-radius:50px; border:1px solid #dee2e6; background:#ffffff; color:#6c757d; text-transform:uppercase; }
+    #main { flex:1; display:flex; flex-direction:column; }
+    #header { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 18px; background:#ffffff; border-bottom:1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #header-left { display:flex; align-items:center; gap:12px; }
+    #backBtn { border-radius:50px; border:1px solid #dee2e6; background:#ffffff; color:#212529; padding:10px 14px; font-size:14px; min-height:44px; cursor:pointer; transition: background-color 0.2s; }
+    #backBtn:hover { background:#e9ecef; }
+    #titles { display:flex; flex-direction:column; gap:2px; }
+    #titles strong { font-size:18px; }
+    #titles small { font-size:12px; color:#6c757d; }
+    #header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; border:1px solid #007bff; background:#e7f3ff; color:#007bff; white-space:nowrap; }
+    .badge.success { border-color:#28a745; background:#d4edda; color:#155724; }
+    .badge.error { border-color:#dc3545; background:#f8d7da; color:#721c24; }
+    #modeToggle { border-radius:50px; border:1px solid #dee2e6; background:#ffffff; color:#212529; padding:10px 14px; font-size:14px; min-height:44px; cursor:pointer; display:flex; align-items:center; gap:8px; transition: background-color 0.2s; }
+    #modeToggle:hover { background:#e9ecef; }
+    #modeToggle .dot { width:10px; height:10px; border-radius:50px; background:#28a745; }
+    #modeToggle.preview .dot { background:#fd7e14; }
+    #canvas { padding:18px; flex:1; overflow-y:auto; }
+    #canvas-inner { min-height:420px; border-radius:8px; border:1px solid #dee2e6; background:#ffffff; padding:16px; box-shadow:0 2px 4px rgba(0,0,0,0.1); touch-action:none; }
+    #canvas-inner.drag-over { border-color:#007bff; box-shadow:0 0 0 1px rgba(0,123,255,0.25),0 0 28px rgba(0,123,255,0.25); }
+    .empty { border:1px dashed #dee2e6; border-radius:8px; padding:18px; text-align:center; color:#6c757d; font-size:14px; background:#f8f9fa; }
+    .block { background:#ffffff; border:1px solid #dee2e6; border-radius:8px; padding:14px; margin-bottom:14px; display:flex; gap:12px; align-items:flex-start; cursor:grab; touch-action:none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: border-color 0.2s; }
+    .block:hover { border-color:#007bff; }
+    .block-inner { flex:1; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; }
+    .block-label { font-size:16px; font-weight:600; }
+    .block-type { font-size:12px; text-transform:uppercase; padding:3px 10px; border-radius:50px; border:1px solid #dee2e6; background:#f8f9fa; color:#6c757d; align-self:flex-start; margin-top:2px; }
+    .indent-1 { margin-left:34px; }
+    .block-actions { display:flex; flex-wrap:wrap; gap:8px; margin-left:auto; }
+    .action { border-radius:50px; border:1px solid #dee2e6; background:#ffffff; color:#212529; font-size:14px; padding:10px 12px; min-height:46px; min-width:46px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background-color 0.2s; }
+    .action:hover { background:#e9ecef; }
+    .hint { font-size:12px; color:#6c757d; margin-top:2px; }
+    .drag-ghost { position:fixed; pointer-events:none; z-index:9999; padding:12px 16px; border-radius:50px; background:#007bff; color:#ffffff; font-size:14px; display:inline-flex; align-items:center; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translate(-50%,-50%); border:1px solid #0056b3; }
+    .drag-ghost .type-pill { font-size:12px; text-transform:uppercase; padding:2px 10px; border-radius:50px; background:#ffffff; border:1px solid #ffffff; color:#212529; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:9998; }
+    .modal { width:min(920px,92vw); max-height:86vh; overflow:auto; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .modal h3 { margin:0 0 10px; }
+    .modal .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .modal label { font-size:12px; color:#6c757d; display:block; margin-bottom:6px; }
+    .modal input,
+    .list {
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom:8px;
+    }
+    .list-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+    }
+    .list-row input,
+    .list-row select {
+      flex:1;
+      min-width:90px;
+    }
+    .list-row button {
+      border-radius:50px;
+      border:1px solid #dee2e6;
+      background:#ffffff;
+      color:#212529;
+      padding:6px 10px;
+      font-size:12px;
+      min-height:32px;
+      cursor:pointer;
+      transition: background-color 0.2s;
+    }
+    .list-row button:hover {
+      background:#e9ecef;
+    }
+
+    .modal textarea { width:100%; box-sizing:border-box; background:#ffffff; border:1px solid #dee2e6; color:#212529; border-radius:8px; padding:10px 12px; font-size:14px; }
+
+    .list {
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom:8px;
+    }
+    .list-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+    }
+    .list-row input,
+    .list-row select {
+      flex:1;
+      min-width:90px;
+    }
+    .list-row button {
+      border-radius:50px;
+      border:1px solid #dee2e6;
+      background:#ffffff;
+      color:#212529;
+      padding:6px 10px;
+      font-size:12px;
+      min-height:32px;
+      cursor:pointer;
+      transition: background-color 0.2s;
+    }
+    .list-row button:hover {
+      background:#e9ecef;
+    }
+
+    .modal textarea { min-height:160px; resize:vertical; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+    .modal .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    .modal .btn { border-radius:50px; border:1px solid #dee2e6; background:#ffffff; color:#212529; padding:10px 14px; font-size:14px; min-height:44px; cursor:pointer; transition: background-color 0.2s; }
+    .modal .btn.primary { background:#007bff; border-color:#007bff; color:white; }
+    .modal .btn:hover { background:#e9ecef; }
+    .modal .btn.primary:hover { background:#0056b3; }
+    @media (max-width:860px){ #toolbox{width:280px;} .modal .grid{grid-template-columns:1fr;} }
+
+    /* Preview widgets inside blocks (builder preview mode) */
+    .pv {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      opacity: 0.95;
+    }
+    .pv input, .pv select, .pv textarea {
+      background:#ffffff;
+      border:1px solid #dee2e6;
+      color:#212529;
+      border-radius:8px;
+      padding:10px 12px;
+      font-size:14px;
+      min-height:44px;
+    }
+    .pv input { width: 180px; }
+    .pv textarea { width: min(520px, 100%); min-height: 96px; }
+    .pv .unit { color:#6c757d; font-size:13px; margin-left:-6px; }
+    .pv-table {
+      width: 100%;
+      overflow-x: auto;
+      border:1px solid #dee2e6;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    .pv-table table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    .pv-table th, .pv-table td {
+      border:1px solid #dee2e6;
+      padding:8px;
+      font-size:12px;
+      color:#212529;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      background: #f8f9fa;
+      white-space: nowrap;
+    }
+    .pv-table td { text-transform:none; letter-spacing:0; background: #ffffff; }
+
+  </style>
+</head>
+<!-- Body with toolbox and canvas layout -->
+<body>
+  <!-- Toolbox sidebar with draggable items -->
+  <div id="toolbox">
+    <h1>Admin • Logbook Builder</h1>
+    <p class="sub">Build templates like your Word logbooks (headings + tables).</p>
+
+    <!-- Layout elements -->
+    <h2>Layout</h2>
+    <div class="toolbox-item" draggable="true" data-type="heading"><span>Heading</span><span class="pill">title</span></div>
+    <div class="toolbox-item" draggable="true" data-type="week_commencing"><span>Week Commencing</span><span class="pill">date</span></div>
+    <div class="toolbox-item" draggable="true" data-type="signature"><span>Signature</span><span class="pill">line</span></div>
+    <div class="toolbox-item" draggable="true" data-type="table"><span>Table</span><span class="pill">grid</span></div>
+
+    <!-- Field elements -->
+    <h2>Fields</h2>
+    <div class="toolbox-item" draggable="true" data-type="section"><span>Section</span><span class="pill">group</span></div>
+    <div class="toolbox-item" draggable="true" data-type="temperature"><span>Temperature</span><span class="pill">°C</span></div>
+    <div class="toolbox-item" draggable="true" data-type="yes_no"><span>Yes / No</span><span class="pill">check</span></div>
+    <div class="toolbox-item" draggable="true" data-type="note"><span>Note</span><span class="pill">text</span></div>
+
+    <div class="hint">Tip: drop onto a <b>Section</b> to nest under it.</div>
+  </div>
+
+  <div id="main">
+    <div id="header">
+      <div id="header-left">
+        <button id="backBtn">← Home</button>
+        <div id="titles">
+          <strong id="tplName">Logbook</strong>
+          <small id="tplSub">Template editor</small>
+        </div>
+      </div>
+      <div id="header-right">
+        <span id="status" class="badge">Initialising…</span>
+        <button id="modeToggle"><span class="dot"></span><span class="lbl">Switch to Preview</span></button>
+      </div>
+    </div>
+    <div id="canvas">
+      <div id="canvas-inner"></div>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <h3>Table settings</h3>
+      <div class="grid">
+        <div>
+          <label>Table title (shown above the grid)</label>
+          <input id="tableTitle" placeholder="e.g. Fridge/Freezer Temperature Log" />
+        </div>
+        <div>
+          <label>Table note (optional)</label>
+          <input id="tableNote" placeholder="e.g. Record AM and PM checks" />
+        </div>
+      </div>
+      <div class="grid" style="margin-top:12px;">
+        <div>
+          <label>Columns</label>
+          <div id="colsList" class="list"></div>
+          <button type="button" id="addColBtn" class="btn" style="margin-top:4px;">＋ Add column</button>
+          <div class="hint">Each column needs a label and input type. Use “Row label” for the first column with item names.</div>
+        </div>
+        <div>
+          <label>Rows (static)</label>
+          <div id="rowsList" class="list"></div>
+          <button type="button" id="addRowBtn" class="btn" style="margin-top:4px;">＋ Add row</button>
+          <div class="hint">These rows are ignored when “Auto rows: Mon–Sun” is enabled.</div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:12px;">
+        <div>
+          <label><input id="rowModePerDay" type="checkbox" style="transform:scale(1.2); margin-right:8px;">Auto rows: Mon–Sun (per day)</label>
+          <div class="hint">If enabled, the Fill page will generate 7 rows automatically for the selected week.</div>
+        </div>
+        <div>
+          <label><input id="showDatesInRows" type="checkbox" style="transform:scale(1.2); margin-right:8px;">Show dates in day rows</label>
+          <div class="hint">Shows labels like “Mon 2025-12-22” instead of just “Mon”.</div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="modalCancel" class="btn">Cancel</button>
+        <button id="modalSave" class="btn primary">Save table</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD--9gIymq-tT-o9CGp32W7GFtgXuGQeJw",
+      authDomain: "dradanddrop-bb7c5.firebaseapp.com",
+      projectId: "dradanddrop-bb7c5",
+      storageBucket: "dradanddrop-bb7c5.firebasestorage.app",
+      messagingSenderId: "907742522220",
+      appId: "1:907742522220:web:4fd124ca048626c9e1e149",
+      measurementId: "G-W83330W3GJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    let TEMPLATE_ID = params.get("templateId");
+    if (!TEMPLATE_ID) alert("No templateId provided. Open from templates_home.html");
+
+    const canvasInner = document.getElementById("canvas-inner");
+    const statusEl = document.getElementById("status");
+    const tplNameEl = document.getElementById("tplName");
+    const tplSubEl = document.getElementById("tplSub");
+    const backBtn = document.getElementById("backBtn");
+    const modeToggle = document.getElementById("modeToggle");
+
+    backBtn.addEventListener("click", () => window.location.href = "templates.html");
+
+    let blocks = [];
+    let previewMode = false;
+
+    let touchDrag = null;
+    let lastTouch = null;
+    let ghostEl = null;
+
+    function setStatus(msg, kind="info") {
+      statusEl.textContent = msg;
+      statusEl.classList.remove("success","error");
+      if (kind === "success") statusEl.classList.add("success");
+      if (kind === "error") statusEl.classList.add("error");
+    }
+
+    function defaultLabel(type) {
+      return {
+        heading: "LOGBOOK TITLE",
+        week_commencing: "Week Commencing",
+        signature: "Manager signature",
+        table: "Table",
+        section: "New Section",
+        temperature: "Temperature",
+        yes_no: "Yes / No",
+        note: "Notes"
+      }[type] || "Field";
+    }
+
+    function defaultConfig(type) {
+      if (type === "week_commencing") return { auto_from_entry_date: true };
+      if (type === "signature") return { role: "Manager" };
+      if (type === "heading") return { level: 1 };
+      if (type === "table") {
+        return {
+          title: "New Table",
+          note: "",
+          columns: [
+            { key:"item", label:"Item", input:"text" },
+            { key:"mon", label:"Mon", input:"yn" },
+            { key:"tue", label:"Tue", input:"yn" },
+            { key:"wed", label:"Wed", input:"yn" },
+            { key:"thu", label:"Thu", input:"yn" },
+            { key:"fri", label:"Fri", input:"yn" },
+            { key:"sat", label:"Sat", input:"yn" },
+            { key:"sun", label:"Sun", input:"yn" }
+          ],
+          rows: [
+            { id:"row1", label:"Example row 1" },
+            { id:"row2", label:"Example row 2" }
+          ]
+        };
+      }
+      return {};
+    }
+
+    modeToggle.addEventListener("click", () => {
+      previewMode = !previewMode;
+      modeToggle.classList.toggle("preview", previewMode);
+      modeToggle.querySelector(".lbl").textContent = previewMode ? "Switch to Builder" : "Switch to Preview";
+      setStatus(previewMode ? "Preview mode – dragging disabled" : "Builder mode – drag to build", "info");
+      renderBlocks();
+    });
+
+    async function ensureTemplateExists() {
+      if (!TEMPLATE_ID) return;
+      try {
+        const ref = doc(db, "logbook_templates", TEMPLATE_ID);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          await setDoc(ref, { name:"New Logbook", created_at: new Date().toISOString() });
+          tplNameEl.textContent = "New Logbook";
+          tplSubEl.textContent = `ID: ${TEMPLATE_ID}`;
+        } else {
+          const data = snap.data();
+          tplNameEl.textContent = data.name || "Logbook";
+          tplSubEl.textContent = data.description || `ID: ${TEMPLATE_ID}`;
+        }
+      } catch (e) {
+        console.error(e);
+        setStatus("Error loading template", "error");
+      }
+    }
+
+    async function loadBlocks() {
+      if (!TEMPLATE_ID) return;
+      setStatus("Loading blocks…", "info");
+      try {
+        const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+        const snap = await getDocs(query(colRef, orderBy("sort_index")));
+        blocks = [];
+        snap.forEach(d => blocks.push({ block_id:d.id, ...d.data() }));
+        renderBlocks();
+        setStatus(`Loaded ${blocks.length} block(s)`, "success");
+      } catch (e) {
+        console.error(e);
+        setStatus("Error loading blocks", "error");
+      }
+    }
+
+    function createGhost(label, type) {
+      removeGhost();
+      const g = document.createElement("div");
+      g.className = "drag-ghost";
+      g.innerHTML = `<span>${label}</span><span class="type-pill">${type}</span>`;
+      document.body.appendChild(g);
+      ghostEl = g;
+    }
+    function moveGhost(x,y){ if(ghostEl){ ghostEl.style.left=x+"px"; ghostEl.style.top=y+"px"; } }
+    function removeGhost(){ if(ghostEl?.parentNode){ ghostEl.parentNode.removeChild(ghostEl); } ghostEl=null; }
+
+    function getDropIndex(e) {
+      const els = [...canvasInner.querySelectorAll(".block")];
+      if (els.length === 0) return 0;
+      const y = e.clientY;
+      for (let i=0;i<els.length;i++){
+        const r = els[i].getBoundingClientRect();
+        if (y < r.top + r.height/2) return i;
+      }
+      return els.length;
+    }
+    function getDropParentId(e) {
+      const target = e.target.closest ? e.target.closest(".block") : null;
+      if (!target) return null;
+      if (target.dataset.type !== "section") return null;
+      const rect = target.getBoundingClientRect();
+      const relY = e.clientY - rect.top;
+      if (relY > rect.height / 3) return target.dataset.id;
+      return null;
+    }
+
+    function renderBlocks() {
+      canvasInner.innerHTML = "";
+      if (blocks.length === 0) {
+        const d = document.createElement("div");
+        d.className = "empty";
+        d.textContent = "Drag blocks from the left to build a template. Use Table blocks to match your Word logbooks.";
+        canvasInner.appendChild(d);
+        return;
+      }
+
+      const collapsed = {};
+      blocks.forEach(b => collapsed[b.block_id] = !!(b.config && b.config.collapsed));
+
+      blocks.forEach(b => {
+        if (b.parent_block_id && collapsed[b.parent_block_id]) return;
+
+        const div = document.createElement("div");
+        div.className = "block";
+        div.dataset.id = b.block_id;
+        div.dataset.type = b.type;
+        div.draggable = !previewMode;
+
+        const inner = document.createElement("div");
+        inner.className = "block-inner";
+        if (b.parent_block_id) inner.classList.add("indent-1");
+
+        const label = document.createElement("div");
+        label.className = "block-label";
+        label.textContent = b.label || defaultLabel(b.type);
+        inner.appendChild(label);
+
+        const typePill = document.createElement("div");
+        typePill.className = "block-type";
+        typePill.textContent = b.type;
+        inner.appendChild(typePill);
+
+        const cfg = b.config || {};
+        if (b.type === "heading") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = `Heading level: ${cfg.level || 1}`;
+          inner.appendChild(hint);
+        }
+        if (b.type === "table") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          const cols = Array.isArray(cfg.columns) ? cfg.columns.length : 0;
+          const rows = Array.isArray(cfg.rows) ? cfg.rows.length : 0;
+          hint.textContent = `${cfg.title || "Table"} · ${cols} col · ${rows} rows`;
+          inner.appendChild(hint);
+        }
+        if (b.type === "week_commencing") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "Auto-filled from entry date on Fill & PDF page";
+          inner.appendChild(hint);
+        }
+
+        div.appendChild(inner);
+
+        // Preview mode: show what the block will look like on the Fill page
+        if (previewMode) {
+          const pv = document.createElement("div");
+          pv.className = "pv";
+
+          if (b.type === "temperature") {
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.placeholder = "°C";
+            inp.disabled = true;
+            pv.appendChild(inp);
+
+            const u = document.createElement("span");
+            u.className = "unit";
+            u.textContent = "°C";
+            pv.appendChild(u);
+          } else if (b.type === "yes_no") {
+            const sel = document.createElement("select");
+            sel.disabled = true;
+            sel.innerHTML = `<option value="">Select…</option><option>Yes</option><option>No</option>`;
+            pv.appendChild(sel);
+          } else if (b.type === "note") {
+            const ta = document.createElement("textarea");
+            ta.placeholder = "Notes…";
+            ta.disabled = true;
+            pv.appendChild(ta);
+          } else if (b.type === "week_commencing") {
+            const inp = document.createElement("input");
+            inp.type = "date";
+            inp.disabled = true;
+            pv.appendChild(inp);
+          } else if (b.type === "signature") {
+            const line = document.createElement("div");
+            line.style.flex = "1";
+            line.style.minWidth = "220px";
+            line.style.height = "28px";
+            line.style.borderBottom = "2px solid #94a3b8";
+            pv.appendChild(line);
+          } else if (b.type === "table") {
+            const cfg = b.config || {};
+            const cols = Array.isArray(cfg.columns) ? cfg.columns : [];
+            const rows = Array.isArray(cfg.rows) ? cfg.rows : [];
+            const shell = document.createElement("div");
+            shell.className = "pv-table";
+
+            const t = document.createElement("table");
+            const thead = document.createElement("thead");
+            const trh = document.createElement("tr");
+            (cols.length ? cols : [{label:"Col 1"},{label:"Col 2"}]).slice(0,8).forEach(c => {
+              const th = document.createElement("th");
+              th.textContent = (c.label || c.key || "Col").toString();
+              trh.appendChild(th);
+            });
+            thead.appendChild(trh);
+            t.appendChild(thead);
+
+            const tbody = document.createElement("tbody");
+            const rowCount = Math.min(rows.length || 2, 3);
+            for (let i=0;i<rowCount;i++){
+              const tr = document.createElement("tr");
+              for (let j=0;j<Math.min(cols.length || 2,8);j++){
+                const td = document.createElement("td");
+                td.textContent = "…";
+                tr.appendChild(td);
+              }
+              tbody.appendChild(tr);
+            }
+            t.appendChild(tbody);
+            shell.appendChild(t);
+            pv.appendChild(shell);
+          }
+
+          // Only show pv if this block type has a preview widget
+          if (pv.childNodes.length > 0) {
+            inner.appendChild(pv);
+          }
+        }
+
+        if (!previewMode) {
+          const actions = document.createElement("div");
+          actions.className = "block-actions";
+
+          if (b.type === "section") {
+            const toggle = document.createElement("button");
+            toggle.className = "action";
+            toggle.textContent = (cfg.collapsed ? "Expand" : "Collapse");
+            toggle.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              await updateBlockConfig(b.block_id, { collapsed: !cfg.collapsed });
+              await loadBlocks();
+            });
+            actions.appendChild(toggle);
+          }
+
+          const rename = document.createElement("button");
+          rename.className = "action";
+          rename.textContent = "Edit";
+          rename.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const newLabel = prompt("New label:", b.label || defaultLabel(b.type));
+            if (newLabel && newLabel.trim()) {
+              await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.block_id), { label: newLabel.trim() });
+              await loadBlocks();
+              setStatus("Label updated", "success");
+            }
+          });
+          actions.appendChild(rename);
+
+          const settings = document.createElement("button");
+          settings.className = "action";
+          settings.textContent = "⚙";
+          settings.addEventListener("click", async (e) => { e.stopPropagation(); await openSettings(b); });
+          actions.appendChild(settings);
+
+          const dup = document.createElement("button");
+          dup.className = "action";
+          dup.textContent = "⧉";
+          dup.addEventListener("click", (e) => { e.stopPropagation(); duplicateBlock(b.block_id); });
+          actions.appendChild(dup);
+
+          const del = document.createElement("button");
+          del.className = "action";
+          del.textContent = "🗑";
+          del.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (confirm("Delete this block" + (b.type==="section" ? " and its children" : "") + "?")) deleteBlock(b.block_id);
+          });
+          actions.appendChild(del);
+
+          div.appendChild(actions);
+        }
+
+        canvasInner.appendChild(div);
+      });
+    }
+
+    async function updateBlockConfig(id, patch) {
+      const ref = doc(db, "logbook_templates", TEMPLATE_ID, "blocks", id);
+      const block = blocks.find(x => x.block_id === id);
+      const cfg = { ...(block?.config||{}), ...patch };
+      await updateDoc(ref, { config: cfg });
+    }
+
+    async function openSettings(block) {
+      if (block.type === "heading") {
+        const level = prompt("Heading level (1-3):", (block.config?.level ?? 1));
+        const n = Number(level);
+        await updateBlockConfig(block.block_id, { level: [1,2,3].includes(n) ? n : 1 });
+        await loadBlocks();
+        setStatus("Heading updated", "success");
+        return;
+      }
+      if (block.type === "signature") {
+        const role = prompt("Signature label (e.g. Manager signature):", block.label || "Manager signature");
+        if (role && role.trim()) {
+          await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", block.block_id), { label: role.trim() });
+          await loadBlocks();
+          setStatus("Signature updated", "success");
+        }
+        return;
+      }
+      if (block.type === "temperature") {
+        const min = prompt("Minimum allowed temperature (°C):", block.config?.min ?? "");
+        const max = prompt("Maximum allowed temperature (°C):", block.config?.max ?? "");
+        await updateBlockConfig(block.block_id, { min: (min!==null && min!=="") ? Number(min) : null, max: (max!==null && max!=="") ? Number(max) : null });
+        await loadBlocks();
+        setStatus("Temperature settings saved", "success");
+        return;
+      }
+      if (block.type === "yes_no") {
+        const yesLabel = prompt("Label for YES option:", block.config?.yes_label ?? "Yes") || "Yes";
+        const noLabel = prompt("Label for NO option:", block.config?.no_label ?? "No") || "No";
+        await updateBlockConfig(block.block_id, { yes_label: yesLabel, no_label: noLabel });
+        await loadBlocks();
+        setStatus("Yes/No settings saved", "success");
+        return;
+      }
+      if (block.type === "note") {
+        const maxLen = prompt("Max characters for note (blank = unlimited):", block.config?.max_length ?? "");
+        await updateBlockConfig(block.block_id, { max_length: maxLen ? Number(maxLen) : null });
+        await loadBlocks();
+        setStatus("Note settings saved", "success");
+        return;
+      }
+      if (block.type === "table") {
+        openTableModal(block);
+        return;
+      }
+      if (block.type === "section") setStatus("Section has no extra settings (use Collapse).", "info");
+    }
+
+    
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const tableTitle = document.getElementById("tableTitle");
+    const tableNote = document.getElementById("tableNote");
+    const colsList = document.getElementById("colsList");
+    const rowsList = document.getElementById("rowsList");
+    const addColBtn = document.getElementById("addColBtn");
+    const addRowBtn = document.getElementById("addRowBtn");
+    const rowModePerDay = document.getElementById("rowModePerDay");
+    const showDatesInRows = document.getElementById("showDatesInRows");
+    const modalCancel = document.getElementById("modalCancel");
+    const modalSave = document.getElementById("modalSave");
+    let modalBlockId = null;
+
+    function slugLabel(str) {
+      return String(str || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "col";
+    }
+
+    function renderColumnsUI(columns) {
+      colsList.innerHTML = "";
+      const cols = (Array.isArray(columns) && columns.length)
+        ? columns
+        : [
+            { key: "item", label: "Item", input: "text" },
+            { key: "mon", label: "Mon", input: "yn" },
+            { key: "tue", label: "Tue", input: "yn" }
+          ];
+      cols.forEach(col => {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        const labelInput = document.createElement("input");
+        labelInput.placeholder = "Label (e.g. Mon)";
+        labelInput.value = col.label || "";
+
+        const keyInput = document.createElement("input");
+        keyInput.placeholder = "Key (optional)";
+        keyInput.value = col.key || "";
+
+        const typeSelect = document.createElement("select");
+        typeSelect.innerHTML = `
+          <option value="text">Text</option>
+          <option value="yn">Yes/No</option>
+          <option value="number">Number</option>
+          <option value="rowLabel">Row label</option>
+        `;
+        typeSelect.value = col.input || "text";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", () => row.remove());
+
+        row.appendChild(labelInput);
+        row.appendChild(keyInput);
+        row.appendChild(typeSelect);
+        row.appendChild(delBtn);
+        colsList.appendChild(row);
+      });
+    }
+
+    function renderRowsUI(rows) {
+      rowsList.innerHTML = "";
+      const list = (Array.isArray(rows) && rows.length)
+        ? rows
+        : [
+            { id: "row1", label: "Row 1" },
+            { id: "row2", label: "Row 2" }
+          ];
+      list.forEach(r => {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        const labelInput = document.createElement("input");
+        labelInput.placeholder = "Row label (e.g. Fridge 1)";
+        labelInput.value = r.label || "";
+
+        const idInput = document.createElement("input");
+        idInput.placeholder = "Row id (optional)";
+        idInput.value = r.id || "";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", () => row.remove());
+
+        row.appendChild(labelInput);
+        row.appendChild(idInput);
+        row.appendChild(delBtn);
+        rowsList.appendChild(row);
+      });
+    }
+
+    function readColumnsFromUI() {
+      const result = [];
+      colsList.querySelectorAll(".list-row").forEach(row => {
+        const inputs = row.querySelectorAll("input");
+        const select = row.querySelector("select");
+        if (!inputs.length || !select) return;
+        const label = inputs[0].value.trim();
+        const key = inputs[1].value.trim() || slugLabel(label);
+        const inputType = select.value || "text";
+        if (!label) return;
+        result.push({ key, label, input: inputType });
+      });
+      return result;
+    }
+
+    function readRowsFromUI() {
+      const result = [];
+      rowsList.querySelectorAll(".list-row").forEach(row => {
+        const inputs = row.querySelectorAll("input");
+        if (!inputs.length) return;
+        const label = inputs[0].value.trim();
+        const id = inputs[1].value.trim() || slugLabel(label);
+        if (!label) return;
+        result.push({ id, label });
+      });
+      return result;
+    }
+
+    function openTableModal(block) {
+      const cfg = block.config || defaultConfig("table");
+      modalBlockId = block.block_id;
+      tableTitle.value = cfg.title || block.label || "Table";
+      tableNote.value = cfg.note || "";
+      rowModePerDay.checked = (cfg.row_mode === "per_day");
+      showDatesInRows.checked = !!cfg.show_dates_in_rows;
+      renderColumnsUI(cfg.columns || []);
+      renderRowsUI(cfg.rows || []);
+      modalBackdrop.style.display = "flex";
+    }
+
+    function closeModal() {
+      modalBackdrop.style.display = "none";
+      modalBlockId = null;
+    }
+
+    modalCancel.addEventListener("click", closeModal);
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+
+    if (addColBtn) {
+      addColBtn.addEventListener("click", () => {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        const labelInput = document.createElement("input");
+        labelInput.placeholder = "Label (e.g. Wed)";
+
+        const keyInput = document.createElement("input");
+        keyInput.placeholder = "Key (optional)";
+
+        const typeSelect = document.createElement("select");
+        typeSelect.innerHTML = `
+          <option value="text">Text</option>
+          <option value="yn">Yes/No</option>
+          <option value="number">Number</option>
+          <option value="rowLabel">Row label</option>
+        `;
+        typeSelect.value = "text";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", () => row.remove());
+
+        row.appendChild(labelInput);
+        row.appendChild(keyInput);
+        row.appendChild(typeSelect);
+        row.appendChild(delBtn);
+        colsList.appendChild(row);
+      });
+    }
+
+    if (addRowBtn) {
+      addRowBtn.addEventListener("click", () => {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        const labelInput = document.createElement("input");
+        labelInput.placeholder = "Row label (e.g. Freezer 1)";
+
+        const idInput = document.createElement("input");
+        idInput.placeholder = "Row id (optional)";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.textContent = "✕";
+        delBtn.addEventListener("click", () => row.remove());
+
+        row.appendChild(labelInput);
+        row.appendChild(idInput);
+        row.appendChild(delBtn);
+        rowsList.appendChild(row);
+      });
+    }
+
+    modalSave.addEventListener("click", async () => {
+      if (!modalBlockId) return;
+      const cols = readColumnsFromUI();
+      const rows = readRowsFromUI();
+      if (!cols.length) {
+        alert("Add at least 1 column");
+        return;
+      }
+      if (!rowModePerDay.checked && !rows.length) {
+        alert("Add at least 1 row, or enable Auto rows.");
+        return;
+      }
+      await updateBlockConfig(modalBlockId, {
+        title: tableTitle.value.trim() || "Table",
+        note: tableNote.value.trim() || "",
+        columns: cols,
+        rows: rows,
+        row_mode: rowModePerDay.checked ? "per_day" : null,
+        show_dates_in_rows: !!showDatesInRows.checked
+      });
+      closeModal();
+      await loadBlocks();
+      setStatus("Table saved", "success");
+    });
+async function addBlock(type, idx, parentId) {
+      setStatus("Adding block…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+      for (const x of arr.filter(x => x.sort_index >= idx)) {
+        await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", x.id), { sort_index: x.sort_index + 1 });
+      }
+      await addDoc(colRef, { type, label: defaultLabel(type), sort_index: idx, parent_block_id: parentId || null, config: defaultConfig(type) });
+      await loadBlocks();
+      setStatus("Block added", "success");
+    }
+
+    async function moveBlock(id, newIdx, newParentId) {
+      setStatus("Reordering…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+      const oldIdx = arr.findIndex(x => x.id === id);
+      if (oldIdx === -1) return;
+      const [moved] = arr.splice(oldIdx, 1);
+      arr.splice(newIdx, 0, moved);
+      await Promise.all(arr.map((b, i) => updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.id), { sort_index: i })));
+      await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", id), { parent_block_id: newParentId || null });
+      await loadBlocks();
+      setStatus("Order updated", "success");
+    }
+
+    async function deleteBlock(id) {
+      setStatus("Deleting…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const all = [];
+      snap.forEach(d => all.push({ id:d.id, ...d.data() }));
+      const toDelete = all.filter(b => b.id === id || b.parent_block_id === id).map(b => b.id);
+      const remaining = all.filter(b => !toDelete.includes(b.id));
+      await Promise.all(remaining.map((b, idx) => updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.id), { sort_index: idx })));
+      await Promise.all(toDelete.map(blockId => deleteDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", blockId))));
+      await loadBlocks();
+      setStatus("Deleted", "success");
+    }
+
+    async function duplicateBlock(id) {
+      setStatus("Duplicating…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+      const idx = arr.findIndex(b => b.id === id);
+      if (idx === -1) return;
+      const original = arr[idx];
+      for (const b of arr.filter(b => b.sort_index >= original.sort_index + 1)) {
+        await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.id), { sort_index: b.sort_index + 1 });
+      }
+      await addDoc(colRef, { type: original.type, label: (original.label || defaultLabel(original.type)) + " (copy)", sort_index: original.sort_index + 1, parent_block_id: original.parent_block_id || null, config: original.config || {} });
+      await loadBlocks();
+      setStatus("Duplicated", "success");
+    }
+
+    document.querySelectorAll(".toolbox-item").forEach(item => {
+      item.addEventListener("dragstart", e => {
+        const payload = { kind:"toolbox", type:item.dataset.type };
+        e.dataTransfer.setData("text/plain", JSON.stringify(payload));
+      });
+    });
+
+    document.addEventListener("dragstart", e => {
+      const actionBtn = e.target.closest && e.target.closest("button.action");
+      if (actionBtn) return;
+      const b = e.target.closest(".block");
+      if (!b || previewMode) return;
+      e.dataTransfer.setData("text/plain", JSON.stringify({ kind:"block", id:b.dataset.id }));
+    });
+
+    canvasInner.addEventListener("dragover", e => { if (previewMode) return; e.preventDefault(); canvasInner.classList.add("drag-over"); });
+    canvasInner.addEventListener("dragleave", e => { if (e.target === canvasInner) canvasInner.classList.remove("drag-over"); });
+    canvasInner.addEventListener("drop", async e => {
+      if (previewMode) return;
+      e.preventDefault();
+      canvasInner.classList.remove("drag-over");
+      let d={}; try{ d=JSON.parse(e.dataTransfer.getData("text/plain")); }catch{}
+      const idx = getDropIndex(e);
+      const parentId = getDropParentId(e);
+      if (d.kind === "toolbox") await addBlock(d.type, idx, parentId);
+      if (d.kind === "block") await moveBlock(d.id, idx, parentId);
+    });
+
+    document.querySelectorAll(".toolbox-item").forEach(item => {
+      item.addEventListener("pointerdown", e => {
+        if (e.pointerType !== "touch" || previewMode) return;
+        e.preventDefault();
+        touchDrag = { kind:"toolbox", type:item.dataset.type };
+        lastTouch = e;
+        createGhost(item.firstElementChild.textContent.trim(), item.dataset.type);
+        moveGhost(e.clientX, e.clientY);
+      });
+    });
+
+    document.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "touch" || previewMode) return;
+      const actionBtn = e.target.closest && e.target.closest("button.action");
+      if (actionBtn) return;
+      const b = e.target.closest(".block");
+      if (!b) return;
+      e.preventDefault();
+      touchDrag = { kind:"block", id:b.dataset.id };
+      lastTouch = e;
+      const lbl = b.querySelector(".block-label")?.textContent?.trim() || "Block";
+      createGhost(lbl, b.dataset.type || "block");
+      moveGhost(e.clientX, e.clientY);
+    });
+
+    window.addEventListener("pointermove", e => {
+      if (e.pointerType !== "touch" || !touchDrag) return;
+      lastTouch = e;
+      moveGhost(e.clientX, e.clientY);
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (el && (canvasInner.contains(el) || el === canvasInner)) canvasInner.classList.add("drag-over");
+      else canvasInner.classList.remove("drag-over");
+    });
+
+    window.addEventListener("pointerup", async e => {
+      if (e.pointerType !== "touch" || !touchDrag) return;
+      const drag = touchDrag;
+      touchDrag = null;
+      canvasInner.classList.remove("drag-over");
+      removeGhost();
+
+      const ev = lastTouch || e;
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (!el || !(canvasInner.contains(el) || el === canvasInner)) return;
+
+      const fake = { clientY: ev.clientY, target: el, closest: el.closest?.bind(el) };
+      const idx = getDropIndex(fake);
+      const parentId = getDropParentId(fake);
+      if (drag.kind === "toolbox") await addBlock(drag.type, idx, parentId);
+      if (drag.kind === "block") await moveBlock(drag.id, idx, parentId);
+    });
+
+    setStatus("Connecting to Firestore…", "info");
+    await ensureTemplateExists();
+    await loadBlocks();
+  </script>
+</body>
+</html>
