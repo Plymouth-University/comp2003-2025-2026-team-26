@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin • Fill Logbook + PDF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin:0; background:#f8f9fa; color:#212529; }
+    a { color:#007bff; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #dee2e6; background:#ffffff; position:sticky; top:0; z-index:10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .title { display:flex; flex-direction:column; gap:4px; }
+    .title strong { font-size:18px; }
+    .title small { color:#6c757d; }
+    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    select, input[type="date"] { background:#ffffff; color:#212529; border:1px solid #dee2e6; border-radius:50px; padding:8px 10px; font-size:13px; }
+    button.primary { background:#007bff; color:white; border:none; border-radius:50px; padding:10px 14px; font-size:14px; cursor:pointer; min-height:44px; transition: background-color 0.2s; }
+    button.primary:hover { background:#0056b3; }
+    button.secondary { background:#ffffff; color:#212529; border:1px solid #dee2e6; border-radius:50px; padding:10px 14px; font-size:14px; cursor:pointer; min-height:44px; transition: background-color 0.2s; }
+    button.secondary:hover { background:#e9ecef; }
+    button:disabled { opacity:.6; cursor:default; }
+    main { max-width:1040px; margin:16px auto 40px; padding:0 16px; }
+    .status { font-size:12px; padding:6px 10px; border-radius:50px; display:inline-block; border:1px solid transparent; }
+    .status.info { background:#e7f3ff; color:#007bff; border-color: #b3d9ff; }
+    .status.success { background:#d4edda; color:#155724; border-color: #c3e6cb; }
+    .status.error { background:#f8d7da; color:#721c24; border-color: #f5c6cb; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+    .muted { color:#6c757d; font-size:12px; }
+    .card { background:#ffffff; border:1px solid #dee2e6; border-radius:8px; padding:12px; margin:10px 0; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    .h1 { font-size:22px; font-weight:600; letter-spacing:.02em; text-transform: uppercase; text-align:center; }
+    .h2 { font-size:18px; font-weight:600; text-transform: uppercase; margin-top:10px; }
+    .week { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .week .label { font-weight:600; }
+    .input, .select, .textarea { background:#ffffff; color:#212529; border:1px solid #dee2e6; border-radius:8px; padding:8px 10px; font-size:14px; }
+    .input { width:140px; height:40px; }
+    .select { height:40px; min-width:120px; }
+    .textarea { min-width:320px; min-height:90px; }
+    .row { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; }
+    .row .lbl { min-width:260px; font-weight:600; }
+    .unit { color:#6c757d; font-size:13px; }
+    .temp-ok { border-color:#28a745 !important; background:#d4edda !important; }
+    .temp-warn { border-color:#dc3545 !important; background:#f8d7da !important; }
+    .sig { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .sig-line { border-bottom:2px solid #6c757d; width:min(520px,90%); height:28px; }
+    table.grid { width:100%; border-collapse:collapse; margin-top:10px; background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #dee2e6; }
+    table.grid th, table.grid td { border:1px solid #dee2e6; padding:8px; vertical-align:top; color:#212529; font-size:13px; }
+    table.grid th { background:#f8f9fa; text-transform:uppercase; letter-spacing:.06em; font-size:12px; color:#6c757d; font-weight:600; }
+    .link-home { font-size:12px; color:#6c757d; }
+    .link-home a { color:#007bff; }
+  
+    /* Better table usability on tablets */
+    table.grid { table-layout: fixed; }
+    table.grid th, table.grid td { overflow: hidden; }
+    table.grid td input, table.grid td select {
+      width: 100%;
+      min-width: 92px;
+      box-sizing: border-box;
+    }
+    table.grid td:first-child, table.grid th:first-child { position: sticky; left: 0; z-index: 2; }
+    table.grid th:first-child { z-index: 3; }
+
+  
+    #pdfPreview {
+      background:#ffffff;
+      border-radius:8px;
+      border:1px solid #dee2e6;
+      padding:12px;
+      margin-bottom:26px;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
+    }
+    #pdfPreview .preview-frame {
+      background:white;
+      color:#111827;
+      padding:18px;
+      border-radius:8px;
+      max-width:800px;
+      margin:0 auto;
+      box-shadow:0 2px 4px rgba(0,0,0,0.1);
+    }
+
+  </style>
+</head>
+<!-- Body with header and main content -->
+<body>
+  <!-- Header with title and controls -->
+  <header>
+    <div class="title">
+      <strong>Admin • Fill Logbook</strong>
+      <small>Fill a template and export a PDF that matches a Word-style layout.</small>
+      <div class="link-home">← <a href="templates.html">Back to Admin home</a></div>
+    </div>
+    <div class="controls">
+      <!-- Template selector -->
+      <select id="templateSelect"><option value="">Loading…</option></select>
+      <!-- Date input -->
+      <input id="entryDate" type="date" />
+      <!-- Load button -->
+      <button id="loadBtn" class="secondary">Load</button>
+      <!-- Status indicator -->
+      <span id="status" class="status info">Idle</span>
+    </div>
+  </header>
+
+  <!-- Main content area -->
+  <main>
+    <!-- Toolbar with save and export buttons -->
+    <div class="toolbar">
+      <button id="saveBtn" class="primary">💾 Save Entry</button>
+      <button id="exportBtn" class="secondary">📄 Export to PDF</button>
+      <span class="muted">PDF downloads to your browser Downloads folder.</span>
+    </div>
+    <!-- Container for the form -->
+    <div id="formRoot"></div>
+
+    <!-- Toolbar for PDF preview -->
+    <div class="toolbar" style="margin-top:18px;">
+      <button id="previewBtn" class="secondary">👁 Preview PDF Layout</button>
+      <span class="muted">This shows roughly what the exported PDF will look like.</span>
+    </div>
+    <!-- PDF preview container -->
+    <div id="pdfPreview" style="margin-top:12px;"></div>
+  </main>
+
+  <!-- External script for PDF generation -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+
+  <!-- JavaScript module for Firebase and PDF generation -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getFirestore, doc, collection, getDocs, getDoc, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD--9gIymq-tT-o9CGp32W7GFtgXuGQeJw",
+      authDomain: "dradanddrop-bb7c5.firebaseapp.com",
+      projectId: "dradanddrop-bb7c5",
+      storageBucket: "dradanddrop-bb7c5.firebasestorage.app",
+      messagingSenderId: "907742522220",
+      appId: "1:907742522220:web:4fd124ca048626c9e1e149",
+      measurementId: "G-W83330W3GJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const templateSelect = document.getElementById("templateSelect");
+    const entryDate = document.getElementById("entryDate");
+    const loadBtn = document.getElementById("loadBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const exportBtn = document.getElementById("exportBtn");
+    const statusEl = document.getElementById("status");
+    const formRoot = document.getElementById("formRoot");
+
+    const todayIso = new Date().toISOString().substring(0,10);
+    entryDate.value = todayIso;
+
+    function setStatus(text, kind="info") {
+      statusEl.textContent = text;
+      statusEl.className = "status " + kind;
+    }
+
+    let blocks = [];
+    let values = {};
+
+    let weekCommAuto = true;
+    let weekCommBlockId = null;
+    let weekCommInputEl = null;
+
+    const params = new URLSearchParams(window.location.search);
+    const initialTemplateId = params.get("templateId");
+
+    loadBtn.addEventListener("click", loadTemplate);
+    saveBtn.addEventListener("click", saveEntry);
+    exportBtn.addEventListener("click", exportPDF);
+
+    function mondayOfWeek(dateStr) {
+      const d = new Date(dateStr + "T00:00:00");
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1) - day;
+      d.setDate(d.getDate() + diff);
+      return d.toISOString().substring(0,10);
+    }
+
+    function onEntryDateChanged(){
+      // If Week Commencing is set to auto, update it when the entry date changes
+      if (!weekCommBlockId || !weekCommInputEl) return;
+      if (!weekCommAuto) return;
+      const entry = entryDate.value || todayIso;
+      const wc = mondayOfWeek(entry);
+      weekCommInputEl.value = wc;
+      values[weekCommBlockId] = wc;
+    }
+
+    entryDate.addEventListener('change', async () => {
+      onEntryDateChanged();
+      // If tables use auto-day rows, they will re-render on loadTemplate() (Step 3 will improve this)
+      renderForm();
+    });
+
+    function getCellKey(blockId, rowId, colKey) { return `${blockId}::${rowId}::${colKey}`; }
+
+    function buildAutoDayRows(entryDateStr, showDates){
+      const entry = entryDateStr || todayIso;
+      const monday = mondayOfWeek(entry);
+      const d0 = new Date(monday + 'T00:00:00');
+      const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const rows = [];
+      for (let i=0;i<7;i++){
+        const d = new Date(d0);
+        d.setDate(d0.getDate()+i);
+        const iso = d.toISOString().substring(0,10);
+        rows.push({ id: iso, label: showDates ? `${dayNames[i]} ${iso}` : dayNames[i] });
+      }
+      return rows;
+    }
+
+    async function populateTemplateDropdown() {
+      setStatus("Loading logbooks…", "info");
+      templateSelect.innerHTML = "";
+      try {
+        const snap = await getDocs(collection(db, "logbook_templates"));
+        if (snap.empty) {
+          templateSelect.innerHTML = '<option value="">No logbooks yet</option>';
+          setStatus("Create a logbook on the home screen first.", "error");
+          return;
+        }
+        let selected = initialTemplateId || null;
+        snap.forEach(docSnap => {
+          const id = docSnap.id;
+          const data = docSnap.data();
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.textContent = data.name || ("Logbook " + id);
+          templateSelect.appendChild(opt);
+          if (!selected) selected = id;
+        });
+        templateSelect.value = selected;
+        await loadTemplate();
+      } catch (e) {
+        console.error(e);
+        setStatus("Failed to load logbooks list", "error");
+      }
+    }
+
+    async function loadTemplate() {
+      const tId = templateSelect.value;
+      if (!tId) { setStatus("No logbook selected", "error"); return; }
+      setStatus("Loading template…", "info");
+      formRoot.innerHTML = "";
+      blocks = [];
+      values = {};
+
+      try {
+        const blocksCol = collection(db, "logbook_templates", tId, "blocks");
+        const snap = await getDocs(query(blocksCol, orderBy("sort_index")));
+        snap.forEach(d => blocks.push({ block_id:d.id, ...d.data() }));
+
+        const dateKey = entryDate.value || todayIso;
+        const entryDocRef = doc(db, "log_entries", tId, dateKey, "meta");
+        const entryMetaSnap = await getDoc(entryDocRef);
+        values = (entryMetaSnap.exists() && entryMetaSnap.data().values) ? entryMetaSnap.data().values : {};
+
+        onEntryDateChanged();
+        renderForm();
+        setStatus("Template loaded", "success");
+      } catch (e) {
+        console.error(e);
+        setStatus("Failed to load template", "error");
+      }
+    }
+
+    function applyTempColour(input, cfg) {
+      const val = Number(input.value);
+      input.classList.remove("temp-ok","temp-warn");
+      if (isNaN(val)) return;
+      const min = typeof cfg.min === "number" ? cfg.min : null;
+      const max = typeof cfg.max === "number" ? cfg.max : null;
+      if (min === null && max === null) return;
+      let ok = true;
+      if (min !== null && val < min) ok = false;
+      if (max !== null && val > max) ok = false;
+      input.classList.add(ok ? "temp-ok" : "temp-warn");
+    }
+
+    function renderTable(block) {
+      const cfg = block.config || {};
+      const cols = Array.isArray(cfg.columns) ? cfg.columns : [];
+      let rows = Array.isArray(cfg.rows) ? cfg.rows : [];
+
+      // Auto rows: one row per day (Mon–Sun). Useful for daily checklists.
+      if (cfg.row_mode === "per_day") {
+        rows = buildAutoDayRows(entryDate.value || todayIso, !!cfg.show_dates_in_rows);
+      }
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("div");
+      title.className = "h2";
+      title.textContent = cfg.title || block.label || "Table";
+      card.appendChild(title);
+
+      if (cfg.note) {
+        const note = document.createElement("div");
+        note.className = "muted";
+        note.textContent = cfg.note;
+        note.style.marginTop = "4px";
+        card.appendChild(note);
+      }
+
+      const table = document.createElement("table");
+      table.className = "grid";
+
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      cols.forEach(c => {
+        const th = document.createElement("th");
+        th.textContent = c.label || c.key || "";
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        cols.forEach(c => {
+          const td = document.createElement("td");
+          const rowId = r.id || r.label || "row";
+          const colKey = c.key || "col";
+          const key = getCellKey(block.block_id, rowId, colKey);
+          const existing = values[key];
+
+          if (c.input === "rowLabel") {
+            td.textContent = r.label || r.id || "";
+            tr.appendChild(td);
+            return;
+          }
+
+          if (c.input === "yn") {
+            const sel = document.createElement("select");
+            sel.className = "select";
+            sel.innerHTML = '<option value=""></option><option value="yes">Yes</option><option value="no">No</option>';
+            sel.value = existing || "";
+            sel.addEventListener("change", () => values[key] = sel.value);
+            td.appendChild(sel);
+          } else if (c.input === "number") {
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.className = "input";
+            inp.value = existing ?? "";
+            inp.addEventListener("input", () => values[key] = inp.value);
+            td.appendChild(inp);
+          } else {
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.className = "input";
+            inp.value = existing ?? "";
+            inp.addEventListener("input", () => values[key] = inp.value);
+            td.appendChild(inp);
+          }
+
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      card.appendChild(table);
+      return card;
+    }
+
+    function renderForm() {
+      formRoot.innerHTML = "";
+      if (blocks.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "This logbook has no blocks yet. Use the builder to add headings, tables and fields.";
+        formRoot.appendChild(empty);
+        return;
+      }
+
+      const entry = entryDate.value || todayIso;
+      const weekCommencing = mondayOfWeek(entry);
+
+      blocks.forEach(b => {
+        const cfg = b.config || {};
+        const label = b.label || b.type;
+
+        if (b.type === "heading") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const h = document.createElement("div");
+          h.className = "h1";
+          h.textContent = label;
+          card.appendChild(h);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        if (b.type === "week_commencing") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const wrap = document.createElement("div");
+          wrap.className = "week";
+          wrap.innerHTML = `<div class="label">${label}:</div>`;
+          const inp = document.createElement("input");
+          inp.type = "date";
+          inp.className = "input";
+          weekCommBlockId = b.block_id;
+          inp.value = values[b.block_id] || weekCommencing;
+          // If there was no saved value, keep it auto
+          if (!values[b.block_id]) { values[b.block_id] = inp.value; weekCommAuto = true; }
+          weekCommInputEl = inp;
+          inp.addEventListener("change", () => { values[b.block_id] = inp.value; weekCommAuto = false; });
+          wrap.appendChild(inp);
+          card.appendChild(wrap);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        if (b.type === "signature") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const row = document.createElement("div");
+          row.className = "sig";
+          row.innerHTML = `<div class="lbl">${label}:</div><div class="sig-line"></div>`;
+          card.appendChild(row);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        if (b.type === "table") {
+          formRoot.appendChild(renderTable(b));
+          return;
+        }
+
+        if (b.type === "section") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const h = document.createElement("div");
+          h.className = "h2";
+          h.textContent = label;
+          card.appendChild(h);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `<div class="lbl">${label}</div>`;
+
+        const def = (values[b.block_id] != null) ? values[b.block_id] : (cfg.default_value ?? "");
+
+        if (b.type === "temperature") {
+          const input = document.createElement("input");
+          input.type = "number";
+          input.step = "any";
+          input.placeholder = "°C";
+          input.className = "input";
+          input.value = def;
+          input.addEventListener("input", () => { values[b.block_id] = input.value; applyTempColour(input, cfg); });
+          applyTempColour(input, cfg);
+          row.appendChild(input);
+          const unit = document.createElement("span");
+          unit.className = "unit";
+          unit.textContent = "°C";
+          row.appendChild(unit);
+        } else if (b.type === "yes_no") {
+          const sel = document.createElement("select");
+          sel.className = "select";
+          const yesLabel = cfg.yes_label || "Yes";
+          const noLabel = cfg.no_label || "No";
+          sel.innerHTML = `<option value=""></option><option value="yes">${yesLabel}</option><option value="no">${noLabel}</option>`;
+          sel.value = def || "";
+          sel.addEventListener("change", () => values[b.block_id] = sel.value);
+          row.appendChild(sel);
+        } else if (b.type === "note") {
+          const ta = document.createElement("textarea");
+          ta.className = "textarea";
+          if (cfg.max_length) ta.maxLength = cfg.max_length;
+          ta.value = def;
+          ta.addEventListener("input", () => values[b.block_id] = ta.value);
+          row.appendChild(ta);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.className = "textarea";
+          ta.value = def;
+          ta.addEventListener("input", () => values[b.block_id] = ta.value);
+          row.appendChild(ta);
+        }
+
+        card.appendChild(row);
+        formRoot.appendChild(card);
+      });
+    }
+
+    async function saveEntry() {
+      const tId = templateSelect.value;
+      if (!tId) { setStatus("No logbook selected", "error"); return; }
+      const dateKey = entryDate.value || todayIso;
+      setStatus("Saving…", "info");
+      try {
+        await setDoc(doc(db, "log_entries", tId, dateKey, "meta"), { values, saved_at: new Date().toISOString() }, { merge:true });
+        setStatus("Entry saved", "success");
+      } catch (e) {
+        console.error(e);
+        setStatus("Save failed", "error");
+      }
+    }
+
+    
+    function buildPdfDom() {
+      const tId = templateSelect.value;
+      const dateKey = entryDate.value || todayIso;
+      const name = templateSelect.options[templateSelect.selectedIndex]?.textContent || "Logbook";
+
+      const wrap = document.createElement("div");
+      wrap.style.background = "white";
+      wrap.style.color = "#111827";
+      wrap.style.padding = "18px";
+      wrap.style.fontFamily = 'system-ui, -apple-system, "Segoe UI", Arial, sans-serif';
+      wrap.style.fontSize = "11px";
+      wrap.style.lineHeight = "1.35";
+
+      wrap.innerHTML = `
+        <div style="text-align:center; font-weight:800; font-size:16px; text-transform:uppercase; letter-spacing:.04em;">${name}</div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#374151;">
+          <div><b>Date:</b> ${dateKey}</div>
+          <div><b>Template ID:</b> ${tId}</div>
+        </div>
+        <div style="height:1px; background:#e5e7eb; margin:10px 0 14px;"></div>
+      `;
+
+      const entry = dateKey;
+      const weekComm = mondayOfWeek(entry);
+
+      function cellVal(blockId, rowId, colKey) {
+        return values[`${blockId}::${rowId}::${colKey}`] ?? "";
+      }
+
+      blocks.forEach(b => {
+        const cfg = b.config || {};
+        const label = b.label || b.type;
+
+        if (b.type === "heading") {
+          const h = document.createElement("div");
+          h.style.textAlign = "center";
+          h.style.fontWeight = "800";
+          h.style.fontSize = "14px";
+          h.style.textTransform = "uppercase";
+          h.style.margin = "6px 0 8px";
+          h.textContent = label;
+          wrap.appendChild(h);
+          return;
+        }
+
+        if (b.type === "week_commencing") {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.gap = "8px";
+          row.style.alignItems = "center";
+          row.style.margin = "6px 0 8px";
+          row.innerHTML = `<div style="font-weight:700; min-width:130px;">${label}:</div>
+                           <div style="border-bottom:1px solid #111827; min-width:200px; padding-bottom:2px;">${values[b.block_id] || weekComm}</div>`;
+          wrap.appendChild(row);
+          return;
+        }
+
+        if (b.type === "signature") {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.gap = "8px";
+          row.style.alignItems = "center";
+          row.style.margin = "10px 0 8px";
+          row.innerHTML = `<div style="font-weight:700; min-width:160px;">${label}:</div>
+                           <div style="flex:1; border-bottom:2px solid #111827; height:20px;"></div>`;
+          wrap.appendChild(row);
+          return;
+        }
+
+        if (b.type === "section") {
+          const h = document.createElement("div");
+          h.style.fontWeight = "800";
+          h.style.fontSize = "12px";
+          h.style.textTransform = "uppercase";
+          h.style.marginTop = "10px";
+          h.style.borderBottom = "1px solid #e5e7eb";
+          h.style.paddingBottom = "3px";
+          h.textContent = label;
+          wrap.appendChild(h);
+          return;
+        }
+
+        if (b.type === "table") {
+          const title = document.createElement("div");
+          title.style.fontWeight = "800";
+          title.style.fontSize = "12px";
+          title.style.textTransform = "uppercase";
+          title.style.marginTop = "10px";
+          title.textContent = cfg.title || label || "Table";
+          wrap.appendChild(title);
+
+          if (cfg.note) {
+            const n = document.createElement("div");
+            n.style.fontSize = "10px";
+            n.style.color = "#4b5563";
+            n.style.marginTop = "2px";
+            n.textContent = cfg.note;
+            wrap.appendChild(n);
+          }
+
+          const cols = Array.isArray(cfg.columns) ? cfg.columns : [];
+          let rows = Array.isArray(cfg.rows) ? cfg.rows : [];
+          if (cfg.row_mode === "per_day") {
+            rows = buildAutoDayRows(entry, !!cfg.show_dates_in_rows);
+          }
+
+          const table = document.createElement("table");
+          table.style.width = "100%";
+          table.style.borderCollapse = "collapse";
+          table.style.tableLayout = "fixed";
+          table.style.marginTop = "6px";
+          table.style.fontSize = "9.5px";
+          table.style.wordBreak = "break-word";
+
+          const thead = document.createElement("thead");
+          const trh = document.createElement("tr");
+          cols.forEach(c => {
+            const th = document.createElement("th");
+            th.textContent = c.label || c.key || "";
+            th.style.border = "1px solid #111827";
+            th.style.padding = "4px 3px";
+            th.style.background = "#f3f4f6";
+            th.style.textTransform = "uppercase";
+            th.style.letterSpacing = ".04em";
+            trh.appendChild(th);
+          });
+          thead.appendChild(trh);
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+          rows.forEach(r => {
+            const tr = document.createElement("tr");
+            cols.forEach(c => {
+              const td = document.createElement("td");
+              td.style.border = "1px solid #111827";
+              td.style.padding = "3px 3px";
+              td.style.verticalAlign = "top";
+
+              const rowId = r.id || r.label || "row";
+              const colKey = c.key || "col";
+              let v = cellVal(b.block_id, rowId, colKey);
+
+              if (c.input === "yn") {
+                v = (v === "yes") ? (b.config?.yes_label || "Yes")
+                    : (v === "no") ? (b.config?.no_label || "No")
+                    : "";
+              }
+
+              td.textContent = (v !== "" && v != null) ? v : " ";
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          wrap.appendChild(table);
+          return;
+        }
+
+        let v = values[b.block_id] ?? "";
+        if (b.type === "temperature" && v !== "") v = `${v} °C`;
+        if (b.type === "yes_no") {
+          if (v === "yes") v = (b.config?.yes_label || "Yes");
+          if (v === "no") v = (b.config?.no_label || "No");
+        }
+
+        const row = document.createElement("div");
+        row.style.display = "grid";
+        row.style.gridTemplateColumns = "38% 1fr";
+        row.style.gap = "6px";
+        row.style.marginTop = "6px";
+
+        const labelEl = document.createElement("div");
+        labelEl.style.fontWeight = "600";
+        labelEl.textContent = label;
+
+        const valEl = document.createElement("div");
+        valEl.style.border = "1px solid #111827";
+        valEl.style.padding = "6px";
+        valEl.style.borderRadius = "4px";
+        valEl.style.background = "#f9fafb";
+        valEl.style.minHeight = "18px";
+        valEl.textContent = (v || " ");
+
+        row.appendChild(labelEl);
+        row.appendChild(valEl);
+        wrap.appendChild(row);
+      });
+
+      return wrap;
+    }
+
+    async function exportPDF() {
+      const tId = templateSelect.value;
+      if (!tId) { setStatus("No logbook selected", "error"); return; }
+      const dateKey = entryDate.value || todayIso;
+      if (!window.html2pdf) { setStatus("PDF library missing", "error"); return; }
+
+      const wrap = buildPdfDom();
+
+      const opt = {
+        margin: 10,
+        filename: `logbook_${tId}_${dateKey}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: "#ffffff" },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      setStatus("Generating PDF…", "info");
+      window.html2pdf().from(wrap).set(opt).save()
+        .then(() => setStatus("PDF downloaded", "success"))
+        .catch(err => {
+          console.error(err);
+          setStatus("PDF failed", "error");
+        });
+    }
+
+    // Preview button: show the same DOM that will be used for the PDF
+    const previewBtn = document.getElementById("previewBtn");
+    const pdfPreview = document.getElementById("pdfPreview");
+    if (previewBtn && pdfPreview) {
+      previewBtn.addEventListener("click", () => {
+        pdfPreview.innerHTML = "";
+        const frame = document.createElement("div");
+        frame.className = "preview-frame";
+        frame.appendChild(buildPdfDom());
+        pdfPreview.appendChild(frame);
+      });
+    }
+
+    populateTemplateDropdown();
+
+  </script>
+</body>
+</html>
