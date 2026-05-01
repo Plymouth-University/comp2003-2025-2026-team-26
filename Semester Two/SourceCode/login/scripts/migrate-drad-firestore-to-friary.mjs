@@ -12,7 +12,10 @@ const APPLY = process.argv.includes("--apply");
 
 function resolveFirebaseToolsRoot() {
   if (process.env.FIREBASE_TOOLS_ROOT) return process.env.FIREBASE_TOOLS_ROOT;
-  const appData = process.env.APPDATA || "C:/Users/bayley/AppData/Roaming";
+  const appData = process.env.APPDATA;
+  if (!appData) {
+    throw new Error("Set FIREBASE_TOOLS_ROOT or APPDATA so the script can find firebase-tools.");
+  }
   return path.join(appData, "npm", "node_modules", "firebase-tools");
 }
 
