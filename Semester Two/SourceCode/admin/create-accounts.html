@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="module" src="../shared/guard-admin.js"></script>
+  <title>Create Accounts &bull; Admin</title>
+  <link rel="stylesheet" href="../shared/styles.css" />
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <style>
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      padding: 6px;
+      border-radius: var(--radius-pill);
+      margin-bottom: var(--space-4);
+    }
+
+    .segmented button {
+      height: 50px;
+      min-height: 50px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 650;
+      transition: background var(--transition), box-shadow var(--transition), color var(--transition);
+    }
+
+    .segmented button[aria-selected="true"] {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .segmented button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .row-2 {
+      display: grid;
+      gap: var(--space-3);
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 720px) {
+      .row-2 { grid-template-columns: 1fr 1fr; }
+    }
+
+    .message {
+      display: none;
+      margin-top: var(--space-3);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+    .message.success {
+      display: block;
+      border-color: var(--accent-success);
+      background: var(--accent-success-bg);
+      color: var(--accent-success);
+    }
+    .message.error {
+      display: block;
+      border-color: var(--accent-danger);
+      background: var(--accent-danger-bg);
+      color: var(--accent-danger);
+    }
+
+    .hint {
+      margin: 0 0 var(--space-4);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .loading {
+      opacity: 0.85;
+      pointer-events: none;
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body>
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Admin &bull; Create Accounts
+      </h1>
+      <p class="sub">Admin-only: create Admin, Manager, and Staff accounts</p>
+    </div>
+    <div class="header-right">
+      <a class="back-btn" href="index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back
+      </a>
+      <button type="button" class="btn back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <p class="hint">Choose what you want to create. Staff uses a 4-digit PIN. Admin/Manager uses email + password.</p>
+
+      <div class="segmented" role="tablist" aria-label="Account type">
+        <button type="button" id="create-tab-admin" role="tab" aria-selected="true" aria-controls="create-panel-admin">Admin</button>
+        <button type="button" id="create-tab-manager" role="tab" aria-selected="false" aria-controls="create-panel-manager">Manager</button>
+        <button type="button" id="create-tab-staff" role="tab" aria-selected="false" aria-controls="create-panel-staff">Staff</button>
+      </div>
+
+      <section id="create-panel-admin" class="panel active" role="tabpanel" aria-labelledby="create-tab-admin">
+        <form id="createAdminForm" class="form-grid">
+          <div class="row-2">
+            <div>
+              <label for="adminName">Name (optional)</label>
+              <input id="adminName" type="text" placeholder="Full name" />
+            </div>
+            <div>
+              <label for="adminEmail">Email</label>
+              <input id="adminEmail" type="email" placeholder="admin@company.com" autocomplete="off" required />
+            </div>
+          </div>
+          <div>
+            <label for="adminPassword">Password</label>
+            <input id="adminPassword" type="password" placeholder="Minimum 6 characters" minlength="6" autocomplete="new-password" required />
+          </div>
+          <button class="btn primary" id="adminCreateBtn" type="submit">Create Admin Account</button>
+        </form>
+        <div id="adminMessage" class="message"></div>
+      </section>
+
+      <section id="create-panel-manager" class="panel" role="tabpanel" aria-labelledby="create-tab-manager">
+        <form id="createManagerForm" class="form-grid">
+          <div class="row-2">
+            <div>
+              <label for="managerName">Name (optional)</label>
+              <input id="managerName" type="text" placeholder="Full name" />
+            </div>
+            <div>
+              <label for="managerEmail">Email</label>
+              <input id="managerEmail" type="email" placeholder="manager@company.com" autocomplete="off" required />
+            </div>
+          </div>
+          <div class="row-2">
+            <div>
+              <label for="managerStore">Store (optional)</label>
+              <select id="managerStore">
+                <option value="">Unassigned</option>
+              </select>
+            </div>
+            <div>
+              <label for="managerDepartment">Department (optional)</label>
+              <input id="managerDepartment" type="text" list="managerDepartmentList" placeholder="Pick existing or type a new department" />
+              <datalist id="managerDepartmentList"></datalist>
+            </div>
+          </div>
+          <div>
+            <label for="managerPassword">Password</label>
+            <input id="managerPassword" type="password" placeholder="Minimum 6 characters" minlength="6" autocomplete="new-password" required />
+          </div>
+          <button class="btn primary" id="managerCreateBtn" type="submit">Create Manager Account</button>
+        </form>
+        <div id="managerMessage" class="message"></div>
+      </section>
+
+      <section id="create-panel-staff" class="panel" role="tabpanel" aria-labelledby="create-tab-staff">
+        <form id="createStaffForm" class="form-grid" autocomplete="off">
+          <div class="row-2">
+            <div>
+              <label for="staffId">Staff ID</label>
+              <input id="staffId" type="text" placeholder="e.g. john_doe" required />
+            </div>
+            <div>
+              <label for="staffName">Name (optional)</label>
+              <input id="staffName" type="text" placeholder="Display name" />
+            </div>
+          </div>
+          <div class="row-2">
+            <div>
+              <label for="staffStore">Store (optional)</label>
+              <select id="staffStore">
+                <option value="">Unassigned</option>
+              </select>
+            </div>
+            <div>
+              <label for="staffDepartment">Department (optional)</label>
+              <input id="staffDepartment" type="text" list="staffDepartmentList" placeholder="Pick existing or type a new department" />
+              <datalist id="staffDepartmentList"></datalist>
+            </div>
+          </div>
+          <div>
+            <label for="staffPin">4-digit PIN</label>
+            <input id="staffPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="4-digit PIN" required />
+          </div>
+          <button class="btn primary" id="staffCreateBtn" type="submit">Create Staff Account</button>
+        </form>
+        <div id="staffMessage" class="message"></div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./create-accounts.js"></script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

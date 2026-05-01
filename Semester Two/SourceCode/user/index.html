@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="module" src="../shared/guard-staff.js"></script>
+  <title>Staff &bull; Logbooks</title>
+  <link rel="stylesheet" href="../shared/styles.css" />
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body>
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Staff &bull; Dashboard
+      </h1>
+      <p class="sub">Open today's logbooks, complete entries, and export PDFs.</p>
+    </div>
+    <div class="header-right">
+      <button type="button" class="btn back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <a class="card" href="stores.html">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="card-content">
+        <div class="title">Today's Logbooks</div>
+        <div class="meta">Choose a store, then a department, then fill today&apos;s logbooks</div>
+      </div>
+    </a>
+  </main>
+
+  <script type="module">
+    import { logLoginActivityOncePerSession } from "../shared/activity-log.js";
+    import { waitForPageGuard } from "../shared/page-guard.js";
+
+    await waitForPageGuard();
+
+    logLoginActivityOncePerSession({
+      section: "Staff Dashboard",
+      summary: "Signed in to Staff dashboard"
+    });
+  </script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>
+
+
+
+

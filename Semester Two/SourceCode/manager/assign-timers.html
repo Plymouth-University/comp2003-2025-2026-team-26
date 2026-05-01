@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Manager • Assign Timers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-manager.js"></script>
+  <script src="../shared/theme-init.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --border-color: #262626;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; }
+    header { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border-color); background:var(--bg-secondary); box-shadow:var(--shadow-sm); flex-wrap:wrap; }
+    .header-left { display:flex; flex-direction:column; gap:4px; }
+    .header-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto; }
+    .sub { margin:0; font-size:12px; color:var(--text-secondary); }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; border:1px solid var(--accent-primary); background:#dbeafe; color:#1d4ed8; }
+    .btn, .back-btn, select, input[type="time"] { min-height:44px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); padding:10px 14px; font:inherit; }
+    .btn, .back-btn { display:inline-flex; align-items:center; gap:6px; text-decoration:none; cursor:pointer; }
+    .btn.primary { background:var(--accent-primary); border-color:var(--accent-primary); color:#fff; }
+    .btn.primary:hover { background:var(--accent-primary-hover); }
+    main { max-width:980px; margin:0 auto; padding:16px; }
+    .card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; padding:16px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
+    .title { font-size:16px; font-weight:700; }
+    .meta { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    .rule-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .rule-item { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:14px; border:1px solid var(--border-color); border-radius:12px; background:var(--bg-tertiary); }
+    .rule-title { font-weight:700; }
+    .rule-meta { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+    .rule-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .small { min-height:36px; padding:8px 12px; }
+    .empty { border:1px dashed var(--border-color); border-radius:12px; padding:20px; text-align:center; color:var(--text-secondary); background:var(--bg-tertiary); }
+    @media (max-width: 780px) {
+      .header-right { width:100%; justify-content:flex-start; }
+      .rule-item { flex-direction:column; align-items:flex-start; }
+      .rule-actions { width:100%; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body data-role="manager">
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>Manager • Assign Timers</h1>
+      <p id="scopeLine" class="sub">Manager scope: loading…</p>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading…</span>
+      <a class="back-btn" href="index.html">Back</a>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="btn theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+  <main>
+    <div class="card">
+      <div class="title">Department Due Time</div>
+      <div class="meta">Managers can control the departments within their scope. Saving here updates today's logbooks immediately.</div>
+      <div class="row">
+        <select id="storeSelect"></select>
+        <select id="departmentSelect"></select>
+        <input id="timeInput" type="time" />
+        <button id="saveBtn" class="btn primary" type="button">Save Timer</button>
+        <button id="clearBtn" class="btn" type="button">Clear Timer</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">Current Department Timers</div>
+      <div id="ruleList" class="rule-list"></div>
+    </div>
+  </main>
+  <script type="module" src="../shared/assign-timers-page.js"></script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

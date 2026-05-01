@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Admin &bull; Unlock Records</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-admin.js"></script>
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --border-color: #262626;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #14532d;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+    .header-left { display: flex; flex-direction: column; gap: 4px; }
+    .header-left h1 { margin: 0; font-size: 18px; }
+    .sub { margin: 0; font-size: 12px; color: var(--text-secondary); }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+    .badge {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-primary);
+      background: #dbeafe;
+      color: #1d4ed8;
+      white-space: nowrap;
+    }
+    .badge.success { border-color: var(--accent-success); background: var(--accent-success-bg); color: #166534; }
+    .badge.error { border-color: var(--accent-danger); background: var(--accent-danger-bg); color: #991b1b; }
+    [data-theme="dark"] .badge { border-color: #3b82f6; background: #172554; color: #93c5fd; }
+    [data-theme="dark"] .badge.success { border-color: #22c55e; background: #14532d; color: #86efac; }
+    [data-theme="dark"] .badge.error { border-color: #ef4444; background: #450a0a; color: #fca5a5; }
+    .meta { font-size: 12px; color: var(--text-secondary); }
+    .back-btn,
+    .btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      min-height: 44px;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .btn.primary {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+    .btn.primary:hover { background: var(--accent-primary-hover); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    main { max-width: 1280px; margin: 16px auto 40px; padding: 0 16px; }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 12px; color: var(--text-secondary); }
+    .select,
+    input[type="date"],
+    input[type="search"] {
+      min-height: 44px;
+      min-width: 170px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    .results-table { width: 100%; border-collapse: collapse; }
+    .results-table th,
+    .results-table td {
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    .results-table th {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-size: 11px;
+    }
+    .status-pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      display: inline-block;
+      text-transform: capitalize;
+    }
+    .status-pill.completed { border-color: #22c55e; background: #dcfce7; color: #166534; }
+    .status-pill.in_progress { border-color: #f59e0b; background: #fef3c7; color: #92400e; }
+    .status-pill.skipped { border-color: #9ca3af; background: #f3f4f6; color: #6b7280; }
+    .status-pill.not_started { border-color: var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); }
+    .status-pill.locked { border-color: var(--accent-danger); background: var(--accent-danger-bg); color: #991b1b; }
+    .status-pill.unlocked { border-color: var(--accent-success); background: var(--accent-success-bg); color: #166534; }
+    [data-theme="dark"] .status-pill.completed { background: #14532d; color: #86efac; }
+    [data-theme="dark"] .status-pill.in_progress { background: #78350f; color: #fcd34d; }
+    [data-theme="dark"] .status-pill.skipped { background: #374151; color: #d1d5db; }
+    [data-theme="dark"] .status-pill.locked { background: #450a0a; color: #fca5a5; }
+    [data-theme="dark"] .status-pill.unlocked { background: #14532d; color: #86efac; }
+    .empty {
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+    }
+    @media (max-width: 980px) {
+      .filters { flex-direction: column; }
+      .filter-group { width: 100%; }
+      .select, input[type="date"], input[type="search"] { width: 100%; min-width: 0; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body data-role="admin">
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>Admin &bull; Unlock Records</h1>
+      <p id="scopeLine" class="sub">Scope: All stores</p>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading...</span>
+      <span class="meta">Last refresh: <strong id="lastUpdated">Never</strong></span>
+      <a class="back-btn" href="index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back
+      </a>
+      <button id="refreshBtn" class="btn" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+        Refresh
+      </button>
+      <button type="button" class="btn back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="card-title">Filters</div>
+      <div class="filters">
+        <div class="filter-group">
+          <label for="storeFilter">Store</label>
+          <select id="storeFilter" class="select">
+            <option value="">All stores</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="dateFromFilter">Date from</label>
+          <input type="date" id="dateFromFilter" />
+        </div>
+        <div class="filter-group">
+          <label for="dateToFilter">Date to</label>
+          <input type="date" id="dateToFilter" />
+        </div>
+        <div class="filter-group">
+          <label for="lockFilter">Integrity state</label>
+          <select id="lockFilter" class="select">
+            <option value="locked">Locked only</option>
+            <option value="all">Locked and unlocked</option>
+            <option value="unlocked">Unlocked only</option>
+          </select>
+        </div>
+        <div class="filter-group" style="min-width: 260px; flex: 1;">
+          <label for="searchBox">Search</label>
+          <input type="search" id="searchBox" placeholder="Store, template, instance ID..." />
+        </div>
+        <div class="filter-group">
+          <button id="applyBtn" class="btn primary" type="button">Apply Filters</button>
+        </div>
+        <div class="filter-group">
+          <button id="clearBtn" class="btn" type="button">Clear Filters</button>
+        </div>
+      </div>
+      <div class="meta" style="margin-top:8px;">Use Refresh for the latest state. The list also refreshes when you return to this tab.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Records</div>
+      <div id="resultsContainer">
+        <div class="empty">Loading...</div>
+      </div>
+      <div class="meta" style="margin-top:12px; display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+        <button id="prevPageBtn" class="btn" type="button" disabled>Previous</button>
+        <span id="pageInfo">Page 0 of 0</span>
+        <button id="nextPageBtn" class="btn" type="button" disabled>Next</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../shared/unlock-records.js"></script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

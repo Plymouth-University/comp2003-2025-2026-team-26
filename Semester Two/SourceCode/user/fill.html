@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Staff &bull; Fill Logbook + PDF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-staff-or-admin.js"></script>
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --border-hover: #d1d5db;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --border-color: #262626;
+      --border-hover: #404040;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #052e16;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin:0; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; transition: background 0.3s, color 0.3s; }
+    a { color:var(--accent-primary); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border-color); background:var(--bg-secondary); position:sticky; top:0; z-index:10; box-shadow: var(--shadow-sm); flex-wrap:wrap; gap:10px; }
+    .header-left { display:flex; flex-direction:column; gap:4px; }
+    .header-left h1 { margin:0; font-size:18px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px; line-height:1.3; }
+    .header-left p { margin:0; color:var(--text-secondary); font-size:13px; line-height:1.4; }
+    .header-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-left:auto; }
+    select, input[type="date"] { background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:50px; padding:8px 10px; font-size:13px; }
+    button.primary { background:var(--accent-primary); color:white; border:none; border-radius:50px; padding:10px 14px; font-size:14px; cursor:pointer; min-height:44px; transition: background-color 0.2s; }
+    button.primary:hover { background:var(--accent-primary-hover); }
+    button.secondary { background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:50px; padding:10px 14px; font-size:14px; cursor:pointer; min-height:44px; transition: background-color 0.2s; }
+    button.secondary:hover { background:var(--bg-tertiary); }
+    button:disabled { opacity:.6; cursor:default; }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border:1px solid var(--border-color); border-radius:50px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; cursor:pointer; min-height:44px; text-decoration:none; transition: background 0.2s; }
+    .back-btn:hover { background:var(--bg-tertiary); text-decoration:none; }
+    .theme-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border:1px solid var(--border-color); border-radius:50%; background:var(--bg-secondary); color:var(--text-primary); font-size:1.25rem; cursor:pointer; transition: background 0.2s; }
+    .theme-toggle:hover { background:var(--bg-tertiary); }
+    main { max-width:1024px; margin:16px auto 40px; padding:0 16px; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; display:inline-block; border:1px solid transparent; }
+    .badge { background:#dbeafe; color:#1d4ed8; border-color: #93c5fd; }
+    .badge.success { background:#dcfce7; color:#166534; border-color: #22c55e; }
+    .badge.error { background:#fee2e2; color:#991b1b; border-color: #ef4444; }
+    [data-theme="dark"] .badge { background:#172554; color:#93c5fd; border-color:#3b82f6; }
+    [data-theme="dark"] .badge.success { background:#14532d; color:#86efac; border-color:#22c55e; }
+    [data-theme="dark"] .badge.error { background:#450a0a; color:#fca5a5; border-color:#ef4444; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+    .record-banner { display:flex; align-items:flex-start; gap:12px; margin:0 0 14px; padding:14px 16px; border:1px solid var(--border-color); border-radius:14px; background:var(--bg-secondary); box-shadow:var(--shadow-sm); }
+    .record-banner[hidden] { display:none; }
+    .record-banner::before { content:""; width:12px; height:12px; margin-top:4px; border-radius:999px; background:var(--text-secondary); flex:none; }
+    .record-banner strong { display:block; margin-bottom:4px; font-size:14px; color:var(--text-primary); }
+    .record-banner p { margin:0; font-size:13px; line-height:1.5; color:var(--text-secondary); }
+    .record-banner.info { border-style:dashed; background:var(--bg-tertiary); }
+    .record-banner.info::before { background:var(--text-primary); }
+    .record-banner.locked { border-color:var(--text-primary); box-shadow:inset 0 0 0 1px var(--text-primary); background:linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); }
+    .record-banner.locked::before { background:var(--text-primary); }
+    .record-banner.success { border-color:var(--accent-success); background:var(--accent-success-bg); }
+    .record-banner.success::before { background:var(--accent-success); }
+    .muted { color:var(--text-secondary); font-size:12px; }
+    .card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:14px; margin:10px 0; box-shadow:var(--shadow-sm); overflow-x:auto; }
+    .section-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-left:3px solid var(--accent-primary); border-radius:10px; padding:0; margin:14px 0; box-shadow:var(--shadow-sm); overflow:visible; }
+    .section-card .section-title { font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-primary); padding:14px 16px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-tertiary); border-radius:10px 10px 0 0; }
+    .section-card .section-body { padding:4px 16px 14px; }
+    .record-readonly .card { position:relative; border-style:dashed; }
+    .record-readonly .card::after { content:"Locked"; position:absolute; top:12px; right:14px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary); }
+    .record-readonly input:disabled,
+    .record-readonly select:disabled,
+    .record-readonly textarea:disabled,
+    .record-readonly button:disabled { opacity:1; cursor:not-allowed; background:var(--bg-tertiary); color:var(--text-secondary); }
+    .record-readonly .sig-canvas { opacity:.58; cursor:not-allowed; }
+    .record-readonly .sig-canvas.is-locked { border-style:dashed; }
+    .h1 { font-size:22px; font-weight:600; letter-spacing:.02em; text-transform: uppercase; text-align:center; color:var(--text-primary); }
+    .h2 { font-size:18px; font-weight:600; text-transform: uppercase; margin-top:10px; color:var(--text-primary); }
+    .week { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .week .label { font-weight:600; }
+    .input, .select, .textarea { background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; font-size:14px; }
+    .input { width:140px; height:40px; }
+    .select { height:40px; min-width:120px; }
+    .textarea { min-width:320px; min-height:90px; }
+    .row { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; }
+    .row .lbl { min-width:260px; font-weight:600; color:var(--text-primary); }
+    .unit { color:var(--text-secondary); font-size:13px; }
+    .temp-ok { border-color:var(--accent-success) !important; background:var(--accent-success-bg) !important; }
+    .temp-warn { border-color:var(--accent-danger) !important; background:var(--accent-danger-bg) !important; }
+    .sig { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; flex-direction:column; }
+    .sig .lbl { font-weight:600; color:var(--text-primary); }
+    .sig-canvas-wrap { display:flex; flex-direction:column; gap:8px; }
+    .sig-canvas-shell { position:relative; display:inline-block; }
+    .sig-canvas { border:2px solid var(--border-color); border-radius:8px; background:#fafafa; touch-action:none; cursor:crosshair; display:block; }
+    .sig-preview {
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:2px solid var(--border-color);
+      border-radius:8px;
+      background:#fafafa;
+      object-fit:contain;
+      pointer-events:none;
+    }
+    .sig-actions { display:flex; gap:8px; }
+    .sig-actions button { padding:6px 12px; font-size:12px; min-height:32px; }
+    table.grid { width:100%; border-collapse:collapse; margin-top:10px; background:var(--bg-secondary); border-radius:8px; overflow:hidden; border:1px solid var(--border-color); min-width:680px; }
+    table.grid th, table.grid td { border:1px solid var(--border-color); padding:8px; vertical-align:top; color:var(--text-primary); font-size:13px; }
+    table.grid th { background:var(--bg-tertiary); text-transform:uppercase; letter-spacing:.06em; font-size:12px; color:var(--text-secondary); font-weight:600; }
+    .link-home { font-size:12px; color:var(--text-secondary); }
+    .link-home a { color:var(--accent-primary); }
+    
+    /* Confirmation modal */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:100; }
+    .modal-backdrop.show { display:flex; }
+    .modal { background:var(--bg-secondary); border-radius:12px; padding:24px; max-width:400px; width:90%; box-shadow:0 20px 40px rgba(0,0,0,0.2); text-align:center; }
+    .modal h3 { margin:0 0 12px; font-size:18px; color:var(--text-primary); }
+    .modal p { margin:0 0 20px; color:var(--text-secondary); font-size:14px; }
+    .modal-btns { display:flex; gap:12px; justify-content:center; }
+    .modal-btns button { flex:1; max-width:140px; }
+  
+    /* Better table usability on tablets */
+    table.grid { table-layout: fixed; }
+    table.grid th, table.grid td { overflow: hidden; }
+    table.grid td input, table.grid td select {
+      width: 100%;
+      min-width: 92px;
+      box-sizing: border-box;
+    }
+    table.grid td:first-child, table.grid th:first-child { position: sticky; left: 0; z-index: 2; background:var(--bg-secondary); }
+    table.grid th:first-child { z-index: 3; background:var(--bg-tertiary); }
+
+  
+    #pdfPreview {
+      background:var(--bg-secondary);
+      border-radius:10px;
+      border:1px solid var(--border-color);
+      padding:12px;
+      margin-bottom:26px;
+      box-shadow:var(--shadow-sm);
+    }
+    #pdfPreview .preview-frame {
+      background:white;
+      color:#1f2937;
+      padding:18px;
+      border-radius:8px;
+      max-width:800px;
+      margin:0 auto;
+      box-shadow:var(--shadow-sm);
+    }
+
+    @media (max-width: 960px) {
+      header { align-items:flex-start; }
+      .header-right { width:100%; justify-content:flex-end; }
+      main { margin:12px auto 32px; padding:0 12px; }
+      .toolbar { flex-direction:column; align-items:stretch; }
+      .toolbar button { width:100%; }
+      .card { padding:14px; }
+      .row .lbl { min-width:200px; }
+      .sig-canvas { width:100% !important; height:120px !important; }
+    }
+
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<!-- Body with header and main content -->
+<body>
+  <!-- Header with title and status -->
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 4px;"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+        Staff &bull; Fill Logbook
+      </h1>
+      <p>Complete the assigned logbook entry and export a Word-style PDF.</p>
+    </div>
+    <div class="header-right">
+      <!-- Status indicator -->
+      <span id="status" class="badge">Loading...</span>
+      <a class="back-btn" id="backBtn" href="today.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back
+      </a>
+      <a class="back-btn" id="homeBtn" href="stores.html?choose=1">Staff Home</a>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="modal-backdrop">
+    <div class="modal">
+      <h3>Submit Entry?</h3>
+      <p>Submit this checklist and lock the record? After submission, staff can no longer edit this entry and you will be returned to the home page.</p>
+      <div class="modal-btns">
+        <button id="confirmNo" class="secondary">Cancel</button>
+        <button id="confirmYes" class="primary">Yes, Submit and Lock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content area -->
+  <main>
+    <div id="recordBanner" class="record-banner" hidden aria-live="polite"></div>
+    <!-- Toolbar with save and export buttons -->
+    <div class="toolbar">
+      <button id="saveBtn" class="primary" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> <span id="saveBtnText">Loading Entry</span></button>
+      <button id="exportBtn" class="secondary" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg> Export to PDF</button>
+      <span class="muted">PDF downloads to your browser Downloads folder.</span>
+    </div>
+    <div id="formRoot"></div>
+
+    <div class="toolbar" style="margin-top:18px;">
+      <button id="previewBtn" class="secondary" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Preview PDF Layout</button>
+      <span class="muted">This shows roughly what the exported PDF will look like.</span>
+    </div>
+    <div id="pdfPreview" style="margin-top:12px;"></div>
+  </main>
+
+  <script type="module">
+    import { db } from "../shared/logbook-app.js";
+    import { doc, collection, getDocs, getDoc, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { auth, getRoleFromUser, onAuthChanged } from "../shared/auth.js";
+    import { writeUserActivity } from "../shared/activity-log.js";
+    import { buildWordStylePdfDom, exportDomToPdf, sanitizeFilename } from "../shared/pdf-export.js";
+    import { getSignatureImageUrl, uploadSignatureDataUrl } from "../shared/signature-storage.js";
+    import { loadEntryMeta, saveInstanceEntry } from "../shared/instance-entry-storage.js";
+    import { buildBusinessWeekRows, getBusinessDateISO, mondayOfBusinessWeek } from "../shared/business-time.js";
+    import { collectReportableNotes, detectLogbookExceptions, evaluateTemperatureValue, normalizeTemperatureConfig } from "../shared/logbook-runtime.js";
+    import { deriveTimerState } from "../shared/department-timers.js";
+    import { waitForPageGuard } from "../shared/page-guard.js";
+
+    await waitForPageGuard();
+    const params = new URLSearchParams(window.location.search);
+    const templateId = params.get("templateId");
+    const instanceId = params.get("instanceId"); // required for staff access path
+    const storeId = params.get("storeId");
+    const departmentParam = params.get("department");
+    const urlDate = params.get("date"); // optional (passed from Today)
+
+    const saveBtn = document.getElementById("saveBtn");
+    const saveBtnText = document.getElementById("saveBtnText");
+    const exportBtn = document.getElementById("exportBtn");
+    const previewBtn = document.getElementById("previewBtn");
+    const statusEl = document.getElementById("status");
+    const formRoot = document.getElementById("formRoot");
+    const recordBanner = document.getElementById("recordBanner");
+    const backBtn = document.getElementById("backBtn");
+    const homeBtn = document.getElementById("homeBtn");
+
+    // Staff must arrive here from Today's Logbooks (pre-selected template + instance context)
+    if (!templateId || !instanceId) {
+      const back = storeId
+        ? `departments.html?storeId=${encodeURIComponent(storeId)}`
+        : "stores.html";
+      window.location.replace(back);
+    }
+    const todayIso = getBusinessDateISO();
+function setStatus(text, kind="info") {
+      statusEl.textContent = text;
+      statusEl.classList.remove("success", "error");
+      if (kind === "success") statusEl.classList.add("success");
+      if (kind === "error") statusEl.classList.add("error");
+    }
+
+    let blocks = [];
+    let values = {};
+    let recordLocked = false;
+    let templateMeta = null;
+    let openedSectionLogged = false;
+    let loadedEntrySnapshot = {};
+    let loadedEntryMeta = null;
+    let loadedInstanceMeta = null;
+    const AUTOSAVE_DEBOUNCE_MS = 1200;
+    const AUTOSAVE_INTERVAL_MS = 15000;
+    let draftDirty = false;
+    let autosaveTimer = null;
+    let autosaveInFlight = null;
+    let submitInProgress = false;
+    let redirectNoticeActive = false;
+    let redirectNoticeText = "";
+    let currentAuthUser = auth.currentUser || null;
+    let currentUserRole = currentAuthUser ? getRoleFromUser(currentAuthUser) : null;
+
+    let weekCommAuto = true;
+    let weekCommBlockId = null;
+    let weekCommInputEl = null;
+    
+    // Signature canvas tracking
+    const signatureCanvases = {};
+    const pendingSignatureUploads = new Map();
+    const signatureUploadTokens = new Map();
+
+    function clearAutosaveTimer() {
+      if (!autosaveTimer) return;
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+
+    function hasLoadedTemplate() {
+      return Boolean(templateMeta && blocks.length > 0);
+    }
+
+    function syncRecordActionState() {
+      const ready = hasLoadedTemplate();
+      exportBtn.disabled = !ready;
+      if (previewBtn) previewBtn.disabled = !ready;
+      return ready;
+    }
+
+    function cloneJson(value) {
+      if (!value) return {};
+      try {
+        return JSON.parse(JSON.stringify(value));
+      } catch {
+        return {};
+      }
+    }
+
+    function pickFirst(...valuesToCheck) {
+      for (const value of valuesToCheck) {
+        const text = String(value || "").trim();
+        if (text) return text;
+      }
+      return "";
+    }
+
+    function resolveStoreId() {
+      return pickFirst(
+        storeId,
+        loadedInstanceMeta?.storeId,
+        loadedEntryMeta?.storeId
+      );
+    }
+
+    function resolveDepartment() {
+      return pickFirst(
+        loadedInstanceMeta?.department,
+        departmentParam,
+        templateMeta?.department,
+        templateMeta?.dept,
+        templateMeta?.category
+      );
+    }
+
+    function resolveSection() {
+      return pickFirst(
+        templateMeta?.section,
+        templateMeta?.logbookSection,
+        templateMeta?.name,
+        templateId
+      );
+    }
+
+    function buildActivityContext() {
+      const dateKey = urlDate || todayIso;
+      return {
+        storeId: resolveStoreId(),
+        department: resolveDepartment(),
+        section: resolveSection(),
+        templateId,
+        instanceId,
+        dateKey
+      };
+    }
+
+    function getActiveUser() {
+      return currentAuthUser || auth.currentUser || null;
+    }
+
+    function isCurrentUserAdmin() {
+      if (currentUserRole === "admin") return true;
+      const activeUser = getActiveUser();
+      return Boolean(activeUser && getRoleFromUser(activeUser) === "admin");
+    }
+
+    function buildStoreSelectionHref() {
+      return "stores.html?choose=1";
+    }
+
+    function buildDepartmentHref() {
+      const activeStoreId = resolveStoreId();
+      if (activeStoreId) {
+        return `departments.html?storeId=${encodeURIComponent(activeStoreId)}`;
+      }
+      return buildHeaderHomeHref();
+    }
+
+    function buildHeaderHomeHref() {
+      return isCurrentUserAdmin() ? "../admin/index.html" : buildStoreSelectionHref();
+    }
+
+    function buildHomeHref() {
+      return isCurrentUserAdmin() ? "../admin/index.html" : buildTodayHref();
+    }
+
+    function buildTodayHref() {
+      const activeStoreId = resolveStoreId();
+      if (activeStoreId) {
+        const department = resolveDepartment();
+        if (department) {
+          return `today.html?storeId=${encodeURIComponent(activeStoreId)}&department=${encodeURIComponent(department)}`;
+        }
+        return `departments.html?storeId=${encodeURIComponent(activeStoreId)}`;
+      }
+      return buildStoreSelectionHref();
+    }
+
+    function updateHeaderLinks() {
+      if (backBtn) backBtn.href = buildDepartmentHref();
+      if (!homeBtn) return;
+      const adminView = isCurrentUserAdmin();
+      homeBtn.href = buildHeaderHomeHref();
+      homeBtn.textContent = adminView ? "Admin Home" : "Staff Home";
+      homeBtn.title = adminView
+        ? "Return to the admin dashboard."
+        : "Return to the store selection.";
+    }
+
+    updateHeaderLinks();
+
+    function formatDateTime(value) {
+      if (!value) return "";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return String(value);
+      return parsed.toLocaleString("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      });
+    }
+
+    function setBanner(kind, title, detail = "") {
+      recordBanner.hidden = false;
+      recordBanner.className = `record-banner ${kind}`;
+      recordBanner.replaceChildren();
+      const content = document.createElement("div");
+      const heading = document.createElement("strong");
+      heading.textContent = title;
+      content.appendChild(heading);
+      if (detail) {
+        const body = document.createElement("p");
+        body.textContent = detail;
+        content.appendChild(body);
+      }
+      recordBanner.appendChild(content);
+    }
+
+    function hideBanner() {
+      recordBanner.hidden = true;
+      recordBanner.className = "record-banner";
+      recordBanner.replaceChildren();
+    }
+
+    function buildLockedMessage() {
+      const lockedAt =
+        loadedEntryMeta?.submittedAt ||
+        loadedEntryMeta?.completedAt ||
+        loadedInstanceMeta?.lockedAt ||
+        loadedInstanceMeta?.submittedAt ||
+        loadedInstanceMeta?.completedAt ||
+        "";
+      const lockedBy =
+        loadedEntryMeta?.completedBy ||
+        loadedEntryMeta?.savedBy ||
+        loadedInstanceMeta?.completedBy ||
+        "";
+      const submittedText = lockedAt ? `Submitted ${formatDateTime(lockedAt)}` : "This record has already been submitted";
+      const byText = lockedBy ? ` by ${lockedBy}` : "";
+      if (isCurrentUserAdmin()) {
+        return `${submittedText}${byText}. Staff can no longer edit this entry. You can make corrections and re-submit it if needed.`;
+      }
+      return `${submittedText}${byText}. If anything needs changing, an admin will need to re-submit the record.`;
+    }
+
+    function summarizeException(item) {
+      if (!item) return "";
+      const label = pickFirst(item.label, item.kind, "Exception");
+      const value = String(item.value || "").trim();
+      return value ? `${label}: ${value}` : label;
+    }
+
+    function buildTemperaturePlaceholder(config, fallback = "Enter temperature...") {
+      const normalized = normalizeTemperatureConfig(config || {});
+      if (normalized.min != null && normalized.max != null) {
+        return `${normalized.min}°C – ${normalized.max}°C`;
+      }
+      if (normalized.min != null) return `Min ${normalized.min}°C`;
+      if (normalized.max != null) return `Max ${normalized.max}°C`;
+      return normalized.placeholder || fallback;
+    }
+
+    function buildEntryInsights(nextStatus) {
+      const dateKey = urlDate || todayIso;
+      const exceptionItems = detectLogbookExceptions(blocks, values, dateKey);
+      const reportableNotes = collectReportableNotes(blocks, values);
+      const dueAtIso = pickFirst(loadedInstanceMeta?.dueAtIso);
+      const department = resolveDepartment();
+      const section = resolveSection();
+      const complianceStatus = nextStatus === "completed"
+        ? (exceptionItems.length > 0 ? "flagged" : "completed")
+        : "incomplete";
+      return {
+        exceptionItems,
+        reportableNotes,
+        exceptionCount: exceptionItems.length,
+        exceptionPreview: exceptionItems.slice(0, 3).map(summarizeException).filter(Boolean),
+        department,
+        section,
+        complianceStatus,
+        timerState: deriveTimerState({
+          dueAtIso,
+          status: nextStatus
+        })
+      };
+    }
+
+    function setFormReadonly(readonly) {
+      formRoot.classList.toggle("record-readonly", readonly);
+      for (const control of formRoot.querySelectorAll("input, select, textarea, button")) {
+        if (readonly) {
+          if (control.dataset.lockReadonlyApplied !== "1") {
+            control.dataset.lockPrevDisabled = control.disabled ? "1" : "0";
+            if ("readOnly" in control) {
+              control.dataset.lockPrevReadonly = control.readOnly ? "1" : "0";
+            }
+            control.dataset.lockReadonlyApplied = "1";
+          }
+          if ("readOnly" in control) control.readOnly = true;
+          control.disabled = true;
+          continue;
+        }
+
+        if ("readOnly" in control) {
+          control.readOnly = control.dataset.lockPrevReadonly === "1";
+          delete control.dataset.lockPrevReadonly;
+        }
+        control.disabled = control.dataset.lockPrevDisabled === "1";
+        delete control.dataset.lockPrevDisabled;
+        delete control.dataset.lockReadonlyApplied;
+      }
+
+      for (const canvas of formRoot.querySelectorAll(".sig-canvas")) {
+        canvas.classList.toggle("is-locked", readonly);
+        canvas.style.pointerEvents = readonly ? "none" : "auto";
+      }
+    }
+
+    function syncSaveButtonState() {
+      const ready = syncRecordActionState();
+      const lockedForUser = recordLocked && !isCurrentUserAdmin();
+      const uploadingSignature = pendingSignatureUploads.size > 0;
+      if (!ready) {
+        saveBtn.disabled = true;
+        if (saveBtnText) saveBtnText.textContent = "Loading Entry";
+        return;
+      }
+      saveBtn.disabled = lockedForUser || submitInProgress || redirectNoticeActive || uploadingSignature;
+      if (!saveBtnText) return;
+      if (redirectNoticeActive) {
+        saveBtnText.textContent = "Submitted";
+        return;
+      }
+      if (uploadingSignature) {
+        saveBtnText.textContent = "Uploading Signature...";
+        return;
+      }
+      if (submitInProgress) {
+        saveBtnText.textContent = "Submitting...";
+        return;
+      }
+      if (lockedForUser) {
+        saveBtnText.textContent = "Locked Record";
+        return;
+      }
+      if (recordLocked && isCurrentUserAdmin()) {
+        saveBtnText.textContent = "Re-submit Correction";
+        return;
+      }
+      saveBtnText.textContent = "Submit Entry";
+    }
+
+    function nextSignatureToken(blockId) {
+      const next = Number(signatureUploadTokens.get(blockId) || 0) + 1;
+      signatureUploadTokens.set(blockId, next);
+      return next;
+    }
+
+    async function flushPendingSignatureUploads() {
+      if (pendingSignatureUploads.size === 0) return;
+      const settled = await Promise.allSettled([...pendingSignatureUploads.values()]);
+      const rejected = settled.find((result) => result.status === "rejected");
+      if (rejected && rejected.reason) throw rejected.reason;
+      if (rejected) throw new Error("Signature upload failed.");
+    }
+
+    function queueSignatureUpload(blockId, dataUrl) {
+      const uploadToken = nextSignatureToken(blockId);
+      const uploadTask = (async () => {
+        const asset = await uploadSignatureDataUrl(dataUrl, {
+          scope: isCurrentUserAdmin() ? "user-admin" : "user-staff",
+          templateId,
+          dateKey: urlDate || todayIso,
+          blockId,
+          instanceId,
+          storeId
+        });
+        if (signatureUploadTokens.get(blockId) !== uploadToken) return null;
+        updateValue(blockId, asset);
+        if (typeof asset === "string") {
+          setStatus("Firebase Storage unavailable. Signature saved in entry.", "success");
+        }
+        return asset;
+      })()
+        .catch((error) => {
+          console.error(error);
+          if (signatureUploadTokens.get(blockId) === uploadToken) {
+            setStatus("Signature upload failed", "error");
+          }
+          throw error;
+        })
+        .finally(() => {
+          if (pendingSignatureUploads.get(blockId) === uploadTask) {
+            pendingSignatureUploads.delete(blockId);
+          }
+          syncSaveButtonState();
+        });
+
+      pendingSignatureUploads.set(blockId, uploadTask);
+      syncSaveButtonState();
+      return uploadTask;
+    }
+
+    function updateValue(key, nextValue) {
+      const normalized = nextValue ?? "";
+      if (values[key] === normalized) return;
+      values[key] = normalized;
+      markDraftDirty();
+    }
+
+    function markDraftDirty() {
+      if (recordLocked || submitInProgress) return;
+      draftDirty = true;
+      clearAutosaveTimer();
+      autosaveTimer = setTimeout(() => {
+        void saveDraft();
+      }, AUTOSAVE_DEBOUNCE_MS);
+    }
+
+    async function waitForAutosaveInFlight() {
+      if (!autosaveInFlight) return;
+      try {
+        await autosaveInFlight;
+      } catch (_e) {
+        // keep submit flow moving even if draft save fails
+      }
+    }
+
+    let resolveAuthReady = () => {};
+    let authReadySettled = false;
+    const authReady = new Promise((resolve) => {
+      resolveAuthReady = resolve;
+    });
+
+    function settleAuthReady() {
+      if (authReadySettled) return;
+      authReadySettled = true;
+      resolveAuthReady(getActiveUser());
+    }
+
+    async function saveDraft(options = {}) {
+      const { force = false, withStatus = true } = options;
+      const tId = templateId;
+      if (!tId || recordLocked || (submitInProgress && !force)) return false;
+      if (!force && !draftDirty) return true;
+      if (autosaveInFlight) return autosaveInFlight;
+
+      const dateKey = urlDate || todayIso;
+      autosaveInFlight = (async () => {
+        await authReady;
+        if (pendingSignatureUploads.size > 0) {
+          if (withStatus) setStatus("Uploading signatures...", "info");
+          await flushPendingSignatureUploads();
+        }
+        if (withStatus) setStatus("Saving draft...", "info");
+        try {
+          const nowIso = new Date().toISOString();
+          const currentUser = getActiveUser();
+          const savedBy = currentUser?.uid || currentUser?.email || "unknown";
+          const savedRole = currentUser ? getRoleFromUser(currentUser) : "staff";
+          const insights = buildEntryInsights("in_progress");
+          const entryPayload = {
+            values,
+            saved_at: nowIso,
+            draftSavedAt: nowIso,
+            entryState: "draft",
+            recordLocked: false,
+            savedBy,
+            savedRole,
+            templateId: tId,
+            instanceId,
+            storeId,
+            department: insights.department || null,
+            exceptionCount: insights.exceptionCount,
+            exceptionItems: insights.exceptionItems,
+            reportableNotes: insights.reportableNotes,
+            hasReportableNotes: insights.reportableNotes.length > 0
+          };
+
+          if (instanceId) {
+            await saveInstanceEntry(instanceId, entryPayload);
+          } else {
+            await setDoc(doc(db, "log_entries", tId, dateKey, "meta"), entryPayload, { merge: true });
+          }
+
+          if (instanceId) {
+            const instancePatch = {
+              status: "in_progress",
+              updatedAt: nowIso,
+              draftSavedAt: nowIso,
+              department: insights.department || null,
+              section: insights.section || null,
+              complianceStatus: insights.complianceStatus,
+              locked: false,
+              exceptionCount: insights.exceptionCount,
+              exceptionPreview: insights.exceptionPreview,
+              hasReportableNotes: insights.reportableNotes.length > 0,
+              reportableNotes: insights.reportableNotes,
+              timerState: insights.timerState
+            };
+            await setDoc(doc(db, "logbook_instances", instanceId), instancePatch, { merge: true });
+            loadedInstanceMeta = {
+              ...(loadedInstanceMeta || {}),
+              ...instancePatch
+            };
+          }
+
+          loadedEntryMeta = {
+            ...(loadedEntryMeta || {}),
+            ...entryPayload
+          };
+          draftDirty = false;
+          if (withStatus) setStatus("Draft saved", "success");
+          return true;
+        } catch (e) {
+          console.error(e);
+          if (withStatus) setStatus("Draft save failed", "error");
+          return false;
+        } finally {
+          autosaveInFlight = null;
+          if (draftDirty && !submitInProgress && !recordLocked) {
+            clearAutosaveTimer();
+            autosaveTimer = setTimeout(() => {
+              void saveDraft();
+            }, AUTOSAVE_DEBOUNCE_MS);
+          }
+        }
+      })();
+
+      return autosaveInFlight;
+    }
+
+    // Confirmation modal elements
+    const confirmModal = document.getElementById("confirmModal");
+    const confirmYes = document.getElementById("confirmYes");
+    const confirmNo = document.getElementById("confirmNo");
+    
+    function showConfirm() {
+      if (submitInProgress || (recordLocked && !isCurrentUserAdmin())) return;
+      confirmModal.classList.add("show");
+    }
+    function hideConfirm() {
+      confirmModal.classList.remove("show");
+    }
+    
+    confirmNo.addEventListener("click", hideConfirm);
+    confirmYes.addEventListener("click", async () => {
+      hideConfirm();
+      await doSaveEntry();
+    });
+    
+saveBtn.addEventListener("click", () => showConfirm());
+    exportBtn.addEventListener("click", exportPDF);
+
+    function applyRecordLockState() {
+      const isAdmin = isCurrentUserAdmin();
+      const lockedForUser = recordLocked && !isAdmin;
+      syncSaveButtonState();
+      setFormReadonly(lockedForUser);
+
+      if (redirectNoticeActive) {
+        setBanner("success", redirectNoticeText, "You will be taken back automatically in a moment.");
+        return;
+      }
+
+      if (lockedForUser) {
+        setBanner("locked", "Record locked", buildLockedMessage());
+        return;
+      }
+
+      if (recordLocked && isAdmin) {
+        setBanner("info", "Locked record", buildLockedMessage());
+        return;
+      }
+
+      hideBanner();
+    }
+
+    onAuthChanged((user) => {
+      currentAuthUser = user || auth.currentUser || null;
+      currentUserRole = currentAuthUser ? getRoleFromUser(currentAuthUser) : null;
+      updateHeaderLinks();
+      applyRecordLockState();
+      settleAuthReady();
+    });
+
+    setInterval(() => {
+      if (!draftDirty || recordLocked || submitInProgress) return;
+      void saveDraft({ withStatus: false });
+    }, AUTOSAVE_INTERVAL_MS);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "hidden") return;
+      if (!draftDirty || recordLocked || submitInProgress) return;
+      void saveDraft({ force: true, withStatus: false });
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (!draftDirty || recordLocked || submitInProgress) return;
+      clearAutosaveTimer();
+      void saveDraft({ force: true, withStatus: false });
+    });
+
+    function mondayOfWeek(dateStr) {
+      return mondayOfBusinessWeek(dateStr || todayIso);
+    }
+// If tables use auto-day rows, they will re-render on loadTemplate()
+
+    // Staff view has a fixed date (today or urlDate), so date-change hook is a no-op
+    function onEntryDateChanged() { /* no-op for staff view */ }
+
+    function getCellKey(blockId, rowId, colKey) { return `${blockId}::${rowId}::${colKey}`; }
+
+    function buildAutoDayRows(dateStr, showDates){
+      return buildBusinessWeekRows(dateStr || todayIso, showDates);
+    }
+
+    async function loadTemplate() {
+      const tId = templateId;
+if (!tId) { setStatus("No logbook selected", "error"); return; }
+      setStatus("Loading template...", "info");
+      formRoot.innerHTML = "";
+      blocks = [];
+      values = {};
+      templateMeta = null;
+      loadedEntryMeta = null;
+      loadedInstanceMeta = null;
+      redirectNoticeActive = false;
+      redirectNoticeText = "";
+      draftDirty = false;
+      clearAutosaveTimer();
+      syncSaveButtonState();
+
+      try {
+        const blocksCol = collection(db, "logbook_templates", tId, "blocks");
+        const snap = await getDocs(query(blocksCol, orderBy("sort_index")));
+        snap.forEach(d => blocks.push({ block_id:d.id, ...d.data() }));
+        const templateSnap = await getDoc(doc(db, "logbook_templates", tId));
+        templateMeta = templateSnap.exists() ? { id: tId, ...templateSnap.data() } : { id: tId, name: tId };
+
+        const dateKey = urlDate || todayIso;
+        const entryMeta = await loadEntryMeta({ instanceId, templateId: tId, dateKey });
+        const instanceSnap = instanceId ? await getDoc(doc(db, "logbook_instances", instanceId)) : null;
+        loadedEntryMeta = entryMeta ? cloneJson(entryMeta) : null;
+        loadedInstanceMeta = instanceSnap && instanceSnap.exists() ? cloneJson(instanceSnap.data()) : null;
+        values = entryMeta && entryMeta.values ? cloneJson(entryMeta.values) : {};
+        loadedEntrySnapshot = cloneJson(values);
+        const instanceStatus = String(loadedInstanceMeta?.status || "").toLowerCase();
+        recordLocked = Boolean(
+          entryMeta && (entryMeta.recordLocked || entryMeta.locked || String(entryMeta.entryState || "").toLowerCase() === "submitted")
+        ) || Boolean(
+          loadedInstanceMeta && (loadedInstanceMeta.locked || instanceStatus === "completed")
+        );
+        const hasDraftValues = Boolean(!recordLocked && values && Object.keys(values).length > 0);
+
+        onEntryDateChanged();
+        renderForm();
+        updateHeaderLinks();
+        applyRecordLockState();
+        syncSaveButtonState();
+        const isAdmin = isCurrentUserAdmin();
+        if (recordLocked && !isAdmin) {
+          setStatus("Record locked", "error");
+        } else if (recordLocked && isAdmin) {
+          setStatus("Locked record loaded", "success");
+        } else {
+          setStatus(hasDraftValues ? "Draft loaded" : "Template loaded", "success");
+        }
+
+        if (!openedSectionLogged) {
+          openedSectionLogged = true;
+          await writeUserActivity({
+            actionType: "opened_section",
+            summary: `Opened ${templateMeta?.name || tId} for ${dateKey}`,
+            ...buildActivityContext(),
+            metadata: {
+              source: "user_fill"
+            }
+          });
+        }
+      } catch (e) {
+        console.error(e);
+        templateMeta = null;
+        blocks = [];
+        syncSaveButtonState();
+        setStatus("Failed to load template", "error");
+      }
+    }
+
+    function applyTempColour(input, cfg) {
+      input.classList.remove("temp-ok","temp-warn");
+      const result = evaluateTemperatureValue(input.value, cfg || {});
+      if (result.numericValue === null) return;
+      const hasRules =
+        result.min != null ||
+        result.max != null ||
+        result.acceptsNegative === false ||
+        result.acceptsPositive === false;
+      if (!hasRules) return;
+      const ok = result.inRange !== false && result.isPositiveDirectionValid !== false;
+      input.classList.add(ok ? "temp-ok" : "temp-warn");
+    }
+
+    function renderTable(block) {
+      const cfg = block.config || {};
+      const cols = Array.isArray(cfg.columns) ? cfg.columns : [];
+      let rows = Array.isArray(cfg.rows) ? cfg.rows : [];
+
+      // Auto rows: one row per day (Mon-Sun). Useful for daily checklists.
+      if (cfg.row_mode === "per_day") {
+        rows = buildAutoDayRows(urlDate || todayIso, !!cfg.show_dates_in_rows);
+      }
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("div");
+      title.className = "h2";
+      title.textContent = cfg.title || block.label || "Table";
+      card.appendChild(title);
+
+      if (cfg.note) {
+        const note = document.createElement("div");
+        note.className = "muted";
+        note.textContent = cfg.note;
+        note.style.marginTop = "4px";
+        card.appendChild(note);
+      }
+
+      const table = document.createElement("table");
+      table.className = "grid";
+
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      cols.forEach(c => {
+        const th = document.createElement("th");
+        th.textContent = c.label || c.key || "";
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        cols.forEach(c => {
+          const td = document.createElement("td");
+          const rowId = r.id || r.label || "row";
+          const colKey = c.key || "col";
+          const key = getCellKey(block.block_id, rowId, colKey);
+          const existing = values[key];
+
+          if (c.input === "rowLabel") {
+            td.textContent = r.label || r.id || "";
+            tr.appendChild(td);
+            return;
+          }
+
+          if (c.input === "yn") {
+            const sel = document.createElement("select");
+            sel.className = "select";
+            sel.innerHTML = '<option value="">Select…</option><option value="yes">Yes</option><option value="no">No</option>';
+            sel.value = existing || "";
+            sel.addEventListener("change", () => updateValue(key, sel.value));
+            td.appendChild(sel);
+          } else if (c.input === "checkbox") {
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = existing === "true" || existing === true;
+            cb.style.width = "20px"; cb.style.height = "20px"; cb.style.cursor = "pointer";
+            cb.addEventListener("change", () => updateValue(key, cb.checked ? "true" : "false"));
+            td.style.textAlign = "center";
+            td.appendChild(cb);
+          } else if (c.input === "tickcross") {
+            const sel = document.createElement("select");
+            sel.className = "select";
+            sel.innerHTML = '<option value="">Select…</option><option value="tick">✓</option><option value="cross">✗</option>';
+            sel.value = existing || "";
+            sel.addEventListener("change", () => updateValue(key, sel.value));
+            td.appendChild(sel);
+          } else if (c.input === "number") {
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.className = "input";
+            inp.value = existing ?? "";
+            const hasTempRules = String(c?.temperature_mode || "").trim() || c?.min != null || c?.max != null;
+            const tempCfg = normalizeTemperatureConfig(c || {});
+            inp.placeholder = c.min != null && c.max != null ? `${c.min}–${c.max}` : "0.0";
+            if (c.min != null) inp.min = c.min;
+            if (c.max != null) inp.max = c.max;
+            inp.addEventListener("input", () => updateValue(key, inp.value));
+            inp.placeholder = hasTempRules ? buildTemperaturePlaceholder(tempCfg, "0.0") : inp.placeholder;
+            if (tempCfg.min != null) inp.min = tempCfg.min;
+            if (tempCfg.max != null) inp.max = tempCfg.max;
+            inp.addEventListener("input", () => applyTempColour(inp, hasTempRules ? tempCfg : {}));
+            applyTempColour(inp, hasTempRules ? tempCfg : {});
+            td.appendChild(inp);
+          } else if (c.input === "time") {
+            const inp = document.createElement("input");
+            inp.type = "time";
+            inp.className = "input";
+            inp.value = existing ?? "";
+            inp.placeholder = "HH:MM";
+            inp.addEventListener("input", () => updateValue(key, inp.value));
+            td.appendChild(inp);
+          } else if (c.input === "date") {
+            const inp = document.createElement("input");
+            inp.type = "date";
+            inp.className = "input";
+            inp.value = existing ?? "";
+            inp.placeholder = "dd/mm/yyyy";
+            inp.addEventListener("input", () => updateValue(key, inp.value));
+            td.appendChild(inp);
+          } else if (c.input === "signature") {
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.className = "input";
+            inp.placeholder = "Sign here…";
+            inp.value = existing ?? "";
+            inp.style.fontStyle = "italic";
+            inp.addEventListener("input", () => updateValue(key, inp.value));
+            td.appendChild(inp);
+          } else if (c.input === "initials") {
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.className = "input";
+            inp.placeholder = "AB";
+            inp.maxLength = 4;
+            inp.style.width = "60px"; inp.style.textAlign = "center"; inp.style.textTransform = "uppercase";
+            inp.value = existing ?? "";
+            inp.addEventListener("input", () => updateValue(key, inp.value.toUpperCase()));
+            td.appendChild(inp);
+          } else {
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.className = "input";
+            inp.placeholder = "Enter " + (c.label || "text") + "…";
+            inp.value = existing ?? "";
+            inp.addEventListener("input", () => updateValue(key, inp.value));
+            td.appendChild(inp);
+          }
+
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      card.appendChild(table);
+      return card;
+    }
+
+    function renderForm() {
+      formRoot.innerHTML = "";
+      if (blocks.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "This logbook has no blocks yet. Use the builder to add headings, tables and fields.";
+        formRoot.appendChild(empty);
+        return;
+      }
+
+      const entry = urlDate || todayIso;
+      const weekCommencing = mondayOfWeek(entry);
+
+      // Build a set of section IDs and map children
+      const sectionIds = new Set(blocks.filter(b => b.type === "section").map(b => b.block_id));
+
+      function renderBlock(b, target) {
+        const cfg = b.config || {};
+        const label = b.label || b.type;
+
+        if (b.type === "heading") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const h = document.createElement("div");
+          h.className = "h1";
+          h.textContent = label;
+          card.appendChild(h);
+          target.appendChild(card);
+          return;
+        }
+
+        if (b.type === "week_commencing") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const wrap = document.createElement("div");
+          wrap.className = "week";
+          const labelEl = document.createElement("div");
+          labelEl.className = "label";
+          labelEl.textContent = `${label}:`;
+          wrap.appendChild(labelEl);
+          const inp = document.createElement("input");
+          inp.type = "date";
+          inp.className = "input";
+          weekCommBlockId = b.block_id;
+          inp.value = values[b.block_id] || weekCommencing;
+          if (!values[b.block_id]) { values[b.block_id] = inp.value; weekCommAuto = true; }
+          weekCommInputEl = inp;
+          inp.addEventListener("change", () => { updateValue(b.block_id, inp.value); weekCommAuto = false; });
+          wrap.appendChild(inp);
+          card.appendChild(wrap);
+          target.appendChild(card);
+          return;
+        }
+
+        if (b.type === "signature") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const wrap = document.createElement("div");
+          wrap.className = "sig";
+          
+          const lbl = document.createElement("div");
+          lbl.className = "lbl";
+          lbl.textContent = label + ":";
+          wrap.appendChild(lbl);
+          
+          const canvasWrap = document.createElement("div");
+          canvasWrap.className = "sig-canvas-wrap";
+          
+          const canvasShell = document.createElement("div");
+          canvasShell.className = "sig-canvas-shell";
+
+          const canvas = document.createElement("canvas");
+          canvas.className = "sig-canvas";
+          canvas.width = 400;
+          canvas.height = 150;
+          canvasShell.appendChild(canvas);
+          canvasWrap.appendChild(canvasShell);
+          
+          const actions = document.createElement("div");
+          actions.className = "sig-actions";
+          const clearBtn = document.createElement("button");
+          clearBtn.type = "button";
+          clearBtn.className = "secondary";
+          clearBtn.textContent = "Clear";
+          actions.appendChild(clearBtn);
+          canvasWrap.appendChild(actions);
+          
+          wrap.appendChild(canvasWrap);
+          card.appendChild(wrap);
+          target.appendChild(card);
+          
+          const ctx = canvas.getContext("2d");
+
+          function configureSignatureContext() {
+            ctx.strokeStyle = "#1f2937";
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+          }
+
+          function resetSignatureCanvas() {
+            const width = canvas.width;
+            const height = canvas.height;
+            canvas.width = width;
+            canvas.height = height;
+            configureSignatureContext();
+          }
+
+          configureSignatureContext();
+          
+          let drawing = false;
+          let lastX = 0, lastY = 0;
+          let previewImage = null;
+
+          function discardSavedSignaturePreview() {
+            if (previewImage) {
+              previewImage.remove();
+              previewImage = null;
+            }
+            resetSignatureCanvas();
+          }
+          
+          function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            if (e.touches && e.touches[0]) {
+              return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+            }
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+          }
+
+          function startDraw(e) {
+            e.preventDefault();
+            if (previewImage) discardSavedSignaturePreview();
+            drawing = true;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.fill();
+          }
+          function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            lastX = pos.x;
+            lastY = pos.y;
+          }
+          function endDraw() {
+            if (!drawing) return;
+            drawing = false;
+            const dataUrl = canvas.toDataURL("image/png");
+            setStatus("Uploading signature...", "info");
+            void queueSignatureUpload(b.block_id, dataUrl);
+          }
+
+          canvas.addEventListener("mousedown", startDraw);
+          canvas.addEventListener("mousemove", draw);
+          canvas.addEventListener("mouseup", endDraw);
+          canvas.addEventListener("mouseleave", endDraw);
+          canvas.addEventListener("touchstart", startDraw, { passive: false });
+          canvas.addEventListener("touchmove", draw, { passive: false });
+          canvas.addEventListener("touchend", endDraw);
+
+          clearBtn.addEventListener("click", () => {
+            nextSignatureToken(b.block_id);
+            pendingSignatureUploads.delete(b.block_id);
+            discardSavedSignaturePreview();
+            updateValue(b.block_id, "");
+            syncSaveButtonState();
+          });
+          
+          // Load existing signature if saved
+          const signatureUrl = getSignatureImageUrl(values[b.block_id]);
+          if (signatureUrl) {
+            previewImage = document.createElement("img");
+            previewImage.className = "sig-preview";
+            previewImage.alt = `${label} saved signature`;
+            previewImage.src = signatureUrl;
+            canvasShell.appendChild(previewImage);
+          }
+          
+          signatureCanvases[b.block_id] = canvas;
+          return;
+        }
+
+        if (b.type === "table") {
+          target.appendChild(renderTable(b));
+          return;
+        }
+
+        // Section handled at top level — skip here
+        if (b.type === "section") return;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        const row = document.createElement("div");
+        row.className = "row";
+        const labelEl = document.createElement("div");
+        labelEl.className = "lbl";
+        labelEl.textContent = label;
+        row.appendChild(labelEl);
+
+        const def = (values[b.block_id] != null) ? values[b.block_id] : (cfg.default_value ?? "");
+
+        if (b.type === "temperature") {
+          const tempCfg = normalizeTemperatureConfig(cfg || {});
+          const input = document.createElement("input");
+          input.type = "number";
+          input.step = "any";
+          input.placeholder = cfg.min != null && cfg.max != null ? `${cfg.min}°C – ${cfg.max}°C` : "Enter temperature…";
+          input.className = "input";
+          input.placeholder = buildTemperaturePlaceholder(tempCfg);
+          if (tempCfg.min != null) input.min = tempCfg.min;
+          if (tempCfg.max != null) input.max = tempCfg.max;
+          input.value = def;
+          input.addEventListener("input", () => { updateValue(b.block_id, input.value); applyTempColour(input, tempCfg); });
+          applyTempColour(input, tempCfg);
+          row.appendChild(input);
+          const unit = document.createElement("span");
+          unit.className = "unit";
+          unit.textContent = "°C";
+          row.appendChild(unit);
+        } else if (b.type === "yes_no") {
+          const sel = document.createElement("select");
+          sel.className = "select";
+          const yesLabel = cfg.yes_label || "Yes";
+          const noLabel = cfg.no_label || "No";
+          sel.innerHTML = `<option value="">Select…</option><option value="yes">${yesLabel}</option><option value="no">${noLabel}</option>`;
+          sel.value = def || "";
+          sel.addEventListener("change", () => updateValue(b.block_id, sel.value));
+          row.appendChild(sel);
+        } else if (b.type === "note") {
+          const ta = document.createElement("textarea");
+          ta.className = "textarea";
+          ta.placeholder = cfg.placeholder || "Enter notes…";
+          if (cfg.max_length) ta.maxLength = cfg.max_length;
+          ta.value = def;
+          ta.addEventListener("input", () => updateValue(b.block_id, ta.value));
+          row.appendChild(ta);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.className = "textarea";
+          ta.placeholder = "Enter details…";
+          ta.value = def;
+          ta.addEventListener("input", () => updateValue(b.block_id, ta.value));
+          row.appendChild(ta);
+        }
+
+        card.appendChild(row);
+        target.appendChild(card);
+      }
+
+      blocks.forEach(b => {
+        // Skip children — they'll be rendered inside their section
+        if (b.parent_block_id && sectionIds.has(b.parent_block_id)) return;
+
+        if (b.type === "section") {
+          const sectionCard = document.createElement("div");
+          sectionCard.className = "section-card";
+
+          const titleBar = document.createElement("div");
+          titleBar.className = "section-title";
+          titleBar.textContent = b.label || "Section";
+          sectionCard.appendChild(titleBar);
+
+          const body = document.createElement("div");
+          body.className = "section-body";
+
+          const children = blocks.filter(c => c.parent_block_id === b.block_id);
+          children.forEach(child => renderBlock(child, body));
+
+          sectionCard.appendChild(body);
+          formRoot.appendChild(sectionCard);
+          return;
+        }
+
+        renderBlock(b, formRoot);
+      });
+    }
+
+    async function doSaveEntry() {
+      const tId = templateId;
+      if (!tId) { setStatus("No logbook selected", "error"); return; }
+      if (submitInProgress) return;
+      await authReady;
+      const currentUser = getActiveUser();
+      const isAdmin = isCurrentUserAdmin();
+      if (recordLocked && !isAdmin) {
+        setStatus("Record locked", "error");
+        return;
+      }
+
+      submitInProgress = true;
+      syncSaveButtonState();
+      clearAutosaveTimer();
+      await waitForAutosaveInFlight();
+      if (draftDirty) {
+        await saveDraft({ force: true, withStatus: false });
+      }
+      await waitForAutosaveInFlight();
+      if (pendingSignatureUploads.size > 0) {
+        setStatus("Uploading signatures...", "info");
+        await flushPendingSignatureUploads();
+      }
+
+      const dateKey = urlDate || todayIso;
+      setStatus("Saving...", "info");
+      try {
+        const nowIso = new Date().toISOString();
+        const completedBy = currentUser?.uid || currentUser?.email || "unknown";
+        const completedRole = currentUser ? getRoleFromUser(currentUser) : "staff";
+        const insights = buildEntryInsights("completed");
+        const hadPreviousSubmission =
+          Boolean(loadedEntryMeta?.submittedAt) ||
+          Boolean(loadedEntryMeta?.recordLocked) ||
+          String(loadedEntryMeta?.entryState || "").toLowerCase() === "submitted";
+        const actionType = hadPreviousSubmission ? "edited_record" : "submitted_record";
+
+        // Save the entry values
+        const entryPayload = {
+          values,
+          saved_at: nowIso,
+          submittedAt: nowIso,
+          completedAt: nowIso,
+          completedBy,
+          completedRole,
+          entryState: "submitted",
+          recordLocked: true,
+          templateId: tId,
+          instanceId,
+          storeId,
+          department: insights.department || null,
+          exceptionCount: insights.exceptionCount,
+          exceptionItems: insights.exceptionItems,
+          reportableNotes: insights.reportableNotes,
+          hasReportableNotes: insights.reportableNotes.length > 0
+        };
+        if (instanceId) {
+          await saveInstanceEntry(instanceId, entryPayload);
+        } else {
+          await setDoc(doc(db, "log_entries", tId, dateKey, "meta"), entryPayload, { merge:true });
+        }
+        
+        // Update the logbook instance status to "completed"
+        if (instanceId) {
+          const instancePatch = {
+            status: "completed",
+            updatedAt: nowIso,
+            completedAt: nowIso,
+            submittedAt: nowIso,
+            completedBy,
+            completedRole,
+            locked: true,
+            lockedAt: nowIso,
+            department: insights.department || null,
+            section: insights.section || null,
+            complianceStatus: insights.complianceStatus,
+            exceptionCount: insights.exceptionCount,
+            exceptionPreview: insights.exceptionPreview,
+            hasReportableNotes: insights.reportableNotes.length > 0,
+            reportableNotes: insights.reportableNotes,
+            timerState: insights.timerState
+          };
+          await setDoc(doc(db, "logbook_instances", instanceId), instancePatch, { merge: true });
+          loadedInstanceMeta = {
+            ...(loadedInstanceMeta || {}),
+            ...instancePatch
+          };
+        }
+
+        await writeUserActivity({
+          actionType,
+          summary: hadPreviousSubmission
+            ? `Edited and re-submitted ${templateMeta?.name || tId}`
+            : `Submitted ${templateMeta?.name || tId}`,
+          reasonForChange: hadPreviousSubmission ? "Record resubmitted after correction workflow." : "",
+          ...buildActivityContext(),
+          before: hadPreviousSubmission
+            ? {
+                values: loadedEntrySnapshot,
+                submittedAt: loadedEntryMeta?.submittedAt || null,
+                completedBy: loadedEntryMeta?.completedBy || null,
+                recordLocked: Boolean(loadedEntryMeta?.recordLocked)
+              }
+            : null,
+          after: {
+            values,
+            submittedAt: nowIso,
+            completedBy,
+            completedRole,
+            recordLocked: true
+          },
+          metadata: {
+            source: "user_fill",
+            hasPreviousSubmission: hadPreviousSubmission
+          }
+        });
+
+        recordLocked = true;
+        draftDirty = false;
+        clearAutosaveTimer();
+        loadedEntrySnapshot = cloneJson(values);
+        loadedInstanceMeta = {
+          ...(loadedInstanceMeta || {}),
+          status: "completed",
+          updatedAt: nowIso,
+          completedAt: nowIso,
+          submittedAt: nowIso,
+          completedBy,
+          completedRole,
+          locked: true,
+          lockedAt: nowIso,
+          department: insights.department || null,
+          section: insights.section || null,
+          complianceStatus: insights.complianceStatus,
+          exceptionCount: insights.exceptionCount,
+          exceptionPreview: insights.exceptionPreview,
+          hasReportableNotes: insights.reportableNotes.length > 0,
+          reportableNotes: insights.reportableNotes,
+          timerState: insights.timerState
+        };
+        loadedEntryMeta = {
+          ...(loadedEntryMeta || {}),
+          ...entryPayload,
+          values: cloneJson(values)
+        };
+        redirectNoticeActive = true;
+        redirectNoticeText = isAdmin
+          ? "Entry submitted. Returning to Admin home..."
+          : "Entry submitted. Returning to today's logbooks...";
+        applyRecordLockState();
+        setStatus(redirectNoticeText, "success");
+        setTimeout(() => {
+          window.location.href = buildHomeHref();
+        }, 1200);
+      } catch (e) {
+        console.error(e);
+        setStatus("Save failed", "error");
+      } finally {
+        submitInProgress = false;
+        syncSaveButtonState();
+      }
+    }
+
+    async function saveEntry() {
+      showConfirm();
+    }
+
+    
+    function buildPdfDom() {
+      const tId = templateId;
+      const dateKey = urlDate || todayIso;
+      return buildWordStylePdfDom({
+        title: templateMeta?.name || "Logbook",
+        templateId: tId || "",
+        dateKey,
+        blocks,
+        values,
+        headerRows: [
+          {
+            leftLabel: "Date",
+            leftValue: dateKey,
+            rightLabel: "Template ID",
+            rightValue: tId || "Unknown"
+          }
+        ]
+      });
+    }
+
+    async function exportPDF() {
+      if (!hasLoadedTemplate()) {
+        setStatus("Loading entry...", "info");
+        return;
+      }
+      const tId = templateId;
+      if (!tId) { setStatus("No logbook selected", "error"); return; }
+      const dateKey = urlDate || todayIso;
+
+      const wrap = buildPdfDom();
+
+      const filename = `${sanitizeFilename("logbook")}_${sanitizeFilename(tId || "template")}_${sanitizeFilename(dateKey || "date")}.pdf`;
+      setStatus("Generating PDF...", "info");
+      try {
+        await exportDomToPdf(wrap, filename);
+        setStatus("PDF downloaded", "success");
+        await writeUserActivity({
+          actionType: "exported_record",
+          summary: `Exported PDF for ${templateMeta?.name || tId}`,
+          ...buildActivityContext(),
+          metadata: {
+            source: "user_fill",
+            filename
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        setStatus("PDF failed", "error");
+      }
+    }
+
+    // Preview button: show the same DOM that will be used for the PDF
+    const pdfPreview = document.getElementById("pdfPreview");
+    if (previewBtn && pdfPreview) {
+      previewBtn.addEventListener("click", () => {
+        if (!hasLoadedTemplate()) {
+          setStatus("Loading entry...", "info");
+          return;
+        }
+        pdfPreview.replaceChildren();
+        const frame = document.createElement("div");
+        frame.className = "preview-frame";
+        frame.appendChild(buildPdfDom());
+        pdfPreview.appendChild(frame);
+      });
+    }
+
+    syncSaveButtonState();
+    loadTemplate();
+
+  </script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

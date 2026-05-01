@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Manager &bull; User Activity Log</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-manager.js"></script>
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --border-color: #262626;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #052e16;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      box-shadow: var(--shadow-sm);
+    }
+    .header-left { display: flex; flex-direction: column; gap: 4px; }
+    .header-left h1 { margin: 0; font-size: 18px; }
+    .header-left .sub { margin: 0; color: var(--text-secondary); font-size: 12px; }
+    .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-left: auto; }
+    .btn, .back-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 10px 16px;
+      min-height: 44px;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .btn:hover, .back-btn:hover { background: var(--bg-tertiary); }
+    .btn.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
+    .btn.primary:hover { background: var(--accent-primary-hover); }
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .theme-toggle:hover { background: var(--bg-tertiary); }
+    .badge { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--accent-primary); background: #dbeafe; color: #1d4ed8; }
+    .badge.success { border-color: var(--accent-success); background: var(--accent-success-bg); color: #166534; }
+    .badge.error { border-color: var(--accent-danger); background: var(--accent-danger-bg); color: #991b1b; }
+    [data-theme="dark"] .badge { background: #1e3a5f; color: #93c5fd; }
+    main { max-width: 1280px; margin: 18px auto 42px; padding: 0 16px; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; box-shadow: var(--shadow-sm); margin-bottom: 16px; }
+    .card-title { font-weight: 600; font-size: 16px; margin-bottom: 12px; }
+    .scope-line { color: var(--text-secondary); font-size: 12px; margin-bottom: 10px; }
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 12px; color: var(--text-secondary); }
+    .select, input[type="date"], input[type="search"] {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 44px;
+      min-width: 170px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    .results-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .results-table th, .results-table td { border: 1px solid var(--border-color); padding: 10px 12px; font-size: 14px; text-align: left; vertical-align: top; }
+    .results-table th { background: var(--bg-tertiary); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
+    .results-table tr:hover { background: var(--bg-tertiary); }
+    .status-pill { font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-color); display: inline-block; background: var(--bg-tertiary); }
+    .meta { color: var(--text-secondary); font-size: 12px; }
+    .count-badge { color: var(--text-secondary); font-size: 12px; }
+    .pager { margin-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .page-info { color: var(--text-secondary); font-size: 12px; min-width: 72px; text-align: center; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .empty { border: 1px dashed var(--border-color); border-radius: 10px; background: var(--bg-tertiary); color: var(--text-secondary); text-align: center; padding: 24px; }
+    .panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      z-index: 30;
+    }
+    .panel-overlay.show { display: block; }
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: -680px;
+      width: min(680px, 100vw);
+      height: 100vh;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
+      z-index: 40;
+      transition: right 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .side-panel.show { right: 0; }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .panel-content {
+      padding: 16px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .panel-item { border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: var(--bg-tertiary); }
+    .panel-item .label { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); }
+    .panel-item .value { margin-top: 4px; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+    .panel-item.missing { border-color: var(--accent-danger); background: var(--accent-danger-bg); }
+    .json-box {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-tertiary);
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .before-after { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    @media (max-width: 980px) {
+      .filters { flex-direction: column; align-items: stretch; }
+      .filter-group { width: 100%; }
+      .select, input[type="date"], input[type="search"] { width: 100%; min-width: 0; }
+      .panel-grid, .before-after { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body data-role="manager">
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>Manager &bull; Activity Log</h1>
+      <p class="sub">Manager scoped, view-only audit trail (search by staff PIN/ID).</p>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading...</span>
+      <a class="back-btn" href="index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back
+      </a>
+      <button type="button" class="btn back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="card-title">Filters</div>
+      <div id="scopeLine" class="scope-line">Scope: Loading...</div>
+      <div class="filters">
+        <div class="filter-group" style="min-width:260px; flex:1;">
+          <label for="searchBox">Search (PIN / Staff ID / Name / Username)</label>
+          <input id="searchBox" type="search" class="select" placeholder="e.g. 1234, staff_amy, Amy" />
+        </div>
+        <div class="filter-group">
+          <label for="storeFilter">Store</label>
+          <select id="storeFilter" class="select">
+            <option value="">All stores</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="departmentFilter">Department</label>
+          <select id="departmentFilter" class="select">
+            <option value="">All departments</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="sectionFilter">Section</label>
+          <select id="sectionFilter" class="select">
+            <option value="">All sections</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="actionFilter">Action Type</label>
+          <select id="actionFilter" class="select">
+            <option value="">All actions</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="dateFromFilter">Date From</label>
+          <input id="dateFromFilter" type="date" />
+        </div>
+        <div class="filter-group">
+          <label for="dateToFilter">Date To</label>
+          <input id="dateToFilter" type="date" />
+        </div>
+        <div class="filter-group">
+          <button id="applyBtn" class="btn primary" type="button">Apply Filters</button>
+        </div>
+        <div class="filter-group">
+          <button id="clearBtn" class="btn" type="button">Clear Filters</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">Results</div>
+      <div id="countBadge" class="count-badge">0 results</div>
+      <div id="resultsContainer">
+        <div class="empty">Loading activity logs...</div>
+      </div>
+      <div class="pager">
+        <button id="prevPageBtn" class="btn" type="button">Previous</button>
+        <span id="pageInfo" class="page-info">Page 1</span>
+        <button id="nextPageBtn" class="btn" type="button">Next</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="logPanelOverlay" class="panel-overlay"></div>
+  <aside id="logPanel" class="side-panel" aria-label="Activity detail panel">
+    <div class="panel-header">
+      <strong>Log Entry</strong>
+      <button id="closePanelBtn" class="btn" type="button">Close</button>
+    </div>
+    <div class="panel-content">
+      <div class="panel-grid">
+        <div class="panel-item"><div class="label">Action</div><div id="panelAction" class="value">-</div></div>
+        <div class="panel-item"><div class="label">Time</div><div id="panelTime" class="value">-</div></div>
+        <div class="panel-item"><div class="label">User</div><div id="panelUser" class="value">-</div></div>
+        <div class="panel-item"><div class="label">Store</div><div id="panelStore" class="value">-</div></div>
+        <div class="panel-item"><div class="label">Department</div><div id="panelDepartment" class="value">-</div></div>
+        <div class="panel-item"><div class="label">Section</div><div id="panelSection" class="value">-</div></div>
+      </div>
+      <div class="panel-item"><div class="label">Summary</div><div id="panelSummary" class="value">-</div></div>
+      <div class="panel-item" id="panelReasonRow"><div class="label">Reason For Change</div><div id="panelReason" class="value">-</div></div>
+      <div id="beforeAfterWrap" class="before-after">
+        <div>
+          <div class="label" style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:6px;">Before</div>
+          <pre id="panelBefore" class="json-box">None</pre>
+        </div>
+        <div>
+          <div class="label" style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:6px;">After</div>
+          <pre id="panelAfter" class="json-box">None</pre>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <script type="module" src="../shared/activity-log-page.js"></script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

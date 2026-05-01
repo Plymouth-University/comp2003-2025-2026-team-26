@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Staff • Today's Logbooks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-staff-or-admin.js"></script>
+  <script src="../shared/theme-init.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border-color: #e5e7eb;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --accent-warning: #f59e0b;
+      --accent-warning-bg: #fef3c7;
+      --accent-warning-text: #92400e;
+      --reminder-action-bg: #fff2c7;
+      --reminder-action-border: #d97706;
+      --reminder-action-text: #6f3b00;
+      --reminder-action-shadow: rgba(245, 158, 11, 0.22);
+git       --reminder-requested-bg: #ffefc2;
+      --reminder-requested-border: #d4a017;
+      --reminder-requested-text: #6f3b00;
+      --reminder-control-width: auto;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --border-color: #262626;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #052e16;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --accent-warning: #f59e0b;
+      --accent-warning-bg: #422006;
+      --accent-warning-text: #fcd34d;
+      --reminder-action-bg: #5b3608;
+      --reminder-action-border: #f59e0b;
+      --reminder-action-text: #ffe7a3;
+      --reminder-action-shadow: rgba(245, 158, 11, 0.28);
+      --reminder-requested-bg: #4c3008;
+      --reminder-requested-border: #fbbf24;
+      --reminder-requested-text: #ffe7a3;
+      --reminder-control-width: auto;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; }
+    header { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border-color); background:var(--bg-secondary); box-shadow:var(--shadow-sm); flex-wrap:wrap; }
+    .header-left { display:flex; flex-direction:column; gap:4px; }
+    .header-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto; }
+    h1 { margin:0; font-size:16px; }
+    .sub { margin:0; font-size:12px; color:var(--text-secondary); }
+    .btn, .back-btn { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:10px 14px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); text-decoration:none; cursor:pointer; }
+    .btn:hover, .back-btn:hover { background:var(--bg-tertiary); text-decoration:none; }
+    .btn.primary { background:var(--accent-primary); color:#fff; border-color:var(--accent-primary); }
+    .btn.primary:hover { background:var(--accent-primary-hover); }
+    .theme-toggle { width:44px; height:44px; padding:0; justify-content:center; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; border:1px solid var(--accent-primary); background:#dbeafe; color:#1d4ed8; }
+    .badge.success { border-color:var(--accent-success); background:var(--accent-success-bg); color:var(--accent-success-text); }
+    .badge.error { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger-text); }
+    main { max-width:980px; margin:0 auto; padding:16px; }
+    .notice, .card, .item { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--shadow-sm); }
+    .notice { padding:12px 14px; margin-bottom:12px; color:var(--accent-warning-text); background:var(--accent-warning-bg); border-color:var(--accent-warning); display:none; }
+    .card { padding:16px; margin-bottom:12px; }
+    .title { font-size:16px; font-weight:700; }
+    .meta { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+    .grid { display:flex; flex-direction:column; gap:12px; }
+    .item { padding:16px; }
+    .item-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .item-summary { flex:1 1 auto; border-radius:12px; cursor:pointer; transition:background-color .18s ease, transform .18s ease; }
+    .item-summary:hover { background:var(--bg-tertiary); }
+    .item-summary:focus-visible { outline:none; box-shadow:0 0 0 3px rgba(37, 99, 235, 0.18); }
+    .item-title { font-size:16px; font-weight:700; }
+    .item-meta { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+    .chip-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .pill { font-size:11px; padding:5px 9px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-tertiary); color:var(--text-secondary); }
+    .pill.completed { border-color:var(--accent-success); background:var(--accent-success-bg); color:var(--accent-success-text); }
+    .pill.in_progress { border-color:var(--accent-warning); background:var(--accent-warning-bg); color:var(--accent-warning-text); }
+    .pill.overdue, .pill.urgent { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger-text); font-weight:700; }
+    .pill.warning { border-color:var(--accent-warning); background:var(--accent-warning-bg); color:var(--accent-warning-text); }
+    .pill.none { border-style:dashed; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+    .action-state {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      width:var(--reminder-control-width) !important;
+      max-width:100%;
+      min-height:34px !important;
+      padding:5px 10px !important;
+      border-radius:50px;
+      border:1px solid var(--reminder-requested-border);
+      background:var(--reminder-requested-bg);
+      color:var(--reminder-requested-text);
+      font-weight:700;
+      font-size:11px !important;
+      line-height:1.1;
+      white-space:nowrap;
+      cursor:default;
+    }
+    .action-state::before {
+      content:"";
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:var(--reminder-requested-border);
+      flex:0 0 auto;
+    }
+    .btn.reminder {
+      width:var(--reminder-control-width) !important;
+      max-width:100%;
+      min-height:34px !important;
+      padding:5px 10px !important;
+      border-width:1px;
+      border-color:var(--reminder-action-border);
+      background:var(--reminder-action-bg);
+      color:var(--reminder-action-text);
+      font-weight:800;
+      font-size:11px !important;
+      line-height:1.1;
+      box-shadow:0 10px 22px -18px var(--reminder-action-shadow);
+    }
+    .btn.reminder:hover {
+      background:var(--accent-warning-bg);
+      border-color:var(--accent-warning);
+      color:var(--accent-warning-text);
+    }
+    .btn.reminder.warning {
+      border-color:var(--accent-warning);
+      background:var(--accent-warning-bg);
+      color:var(--accent-warning-text);
+    }
+    .btn.reminder.urgent, .btn.reminder.overdue { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger-text); font-weight:800; box-shadow:none; }
+    .btn.reminder.requested {
+      background:var(--reminder-requested-bg);
+      border-color:var(--reminder-requested-border);
+      color:var(--reminder-requested-text) !important;
+      font-weight:800;
+    }
+    .btn.reminder.requested:hover {
+      background:var(--reminder-requested-bg);
+      color:var(--reminder-requested-text) !important;
+    }
+    .btn.reminder.requested:disabled {
+      opacity:1;
+      cursor:default;
+      pointer-events:none;
+      background:var(--reminder-requested-bg);
+      border-color:var(--reminder-requested-border);
+      color:var(--reminder-requested-text) !important;
+    }
+    .item.warning { box-shadow:0 0 0 1px var(--accent-warning), var(--shadow-md); }
+    .item.urgent, .item.overdue { box-shadow:0 0 0 1px var(--accent-danger), var(--shadow-md); }
+    .empty { border:1px dashed var(--border-color); border-radius:14px; padding:24px; text-align:center; color:var(--text-secondary); background:var(--bg-tertiary); }
+    @media (max-width: 780px) {
+      .header-right { width:100%; justify-content:flex-start; }
+      .item-head { flex-direction:column; }
+      .actions .btn,
+      .actions .action-state { width:100%; justify-content:center; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body>
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>Staff • Today's Logbooks</h1>
+      <p id="scopeLine" class="sub">Loading store and department…</p>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading…</span>
+      <a id="backBtn" class="back-btn" href="stores.html?choose=1">Change Department</a>
+      <a id="homeBtn" class="back-btn" href="index.html">Staff Home</a>
+      <button id="refreshBtn" class="btn" type="button">Refresh</button>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="btn theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div id="notice" class="notice"></div>
+    <div class="card">
+      <div class="title">Today's Department Logbooks</div>
+      <div class="meta">Timers and reminders only appear on logbooks that have a department timer assigned.</div>
+      <div class="actions" style="margin-top:12px;">
+        <button id="generateBtn" class="btn primary" type="button">Generate Today's Logbooks</button>
+      </div>
+    </div>
+    <div id="list" class="grid"></div>
+  </main>
+
+  <script type="module">
+    import { db } from "../shared/logbook-app.js";
+    import { collection, doc, getDoc, getDocs, query, setDoc, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { auth, getMyAccount, getRoleFromUser } from "../shared/auth.js";
+    import { writeUserActivity } from "../shared/activity-log.js";
+    import { getBusinessDateISO } from "../shared/business-time.js";
+    import { buildLogbookInstanceId, normalizeDepartmentValue } from "../shared/logbook-runtime.js";
+    import { buildTimerFields, describeTimerWindow, deriveTimerState, loadDepartmentTimerRulesForStore } from "../shared/department-timers.js";
+    import { waitForPageGuard } from "../shared/page-guard.js";
+
+    await waitForPageGuard();
+
+    const params = new URLSearchParams(window.location.search);
+    const storeId = String(params.get("storeId") || "").trim();
+    const rawDepartment = String(params.get("department") || "").trim();
+    const department = rawDepartment ? normalizeDepartmentValue(rawDepartment, "General") : "";
+    const todayISO = getBusinessDateISO();
+
+    const statusEl = document.getElementById("status");
+    const scopeLine = document.getElementById("scopeLine");
+    const noticeEl = document.getElementById("notice");
+    const backBtn = document.getElementById("backBtn");
+    const homeBtn = document.getElementById("homeBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const generateBtn = document.getElementById("generateBtn");
+    const listEl = document.getElementById("list");
+
+    let currentScope = { role: "staff", storeId: "", department: "" };
+    let currentStoreName = clean(storeId) || "Store";
+    let refreshTicker = 0;
+
+    function clean(value) {
+      const text = String(value || "").trim();
+      return text || "";
+    }
+
+    function setStatus(text, kind = "info") {
+      statusEl.textContent = text;
+      statusEl.classList.remove("success", "error");
+      if (kind === "success") statusEl.classList.add("success");
+      if (kind === "error") statusEl.classList.add("error");
+    }
+
+    function setNotice(message = "") {
+      noticeEl.textContent = message;
+      noticeEl.style.display = message ? "block" : "none";
+    }
+
+    function buildStoreSelectionHref() {
+      return "stores.html?choose=1";
+    }
+
+    function buildHeaderHomeHref() {
+      return currentScope.role === "admin" ? "../admin/index.html" : "index.html";
+    }
+
+    function buildDepartmentHref() {
+      if (storeId) {
+        return `departments.html?storeId=${encodeURIComponent(storeId)}`;
+      }
+      return buildHeaderHomeHref();
+    }
+
+    function updateNavigationLinks() {
+      if (backBtn) {
+        backBtn.href = buildDepartmentHref();
+        backBtn.textContent = "Change Department";
+      }
+      if (homeBtn) {
+        const adminView = currentScope.role === "admin";
+        homeBtn.href = buildHeaderHomeHref();
+        homeBtn.textContent = adminView ? "Admin Home" : "Staff Home";
+        homeBtn.title = adminView ? "Return to the admin dashboard." : "Return to the staff dashboard.";
+      }
+    }
+
+    async function resolveScope() {
+      const role = getRoleFromUser(auth.currentUser) || "staff";
+      let account = null;
+      try {
+        const result = await getMyAccount();
+        account = result?.account || result || null;
+      } catch (_error) {
+        account = null;
+      }
+      currentScope = {
+        role,
+        storeId: clean(account?.store || account?.storeId),
+        department: clean(account?.department || account?.dept)
+      };
+      updateNavigationLinks();
+    }
+
+    async function ensureRouteAccess() {
+      if (!storeId) {
+        window.location.replace(buildStoreSelectionHref());
+        return false;
+      }
+      if (!department) {
+        window.location.replace(`departments.html?storeId=${encodeURIComponent(storeId)}`);
+        return false;
+      }
+      await resolveScope();
+
+      if (currentScope.storeId && currentScope.storeId !== storeId && currentScope.role !== "admin") {
+        window.location.replace(`departments.html?storeId=${encodeURIComponent(currentScope.storeId)}`);
+        return false;
+      }
+      if (currentScope.department && currentScope.department !== department && currentScope.role !== "admin") {
+        window.location.replace(`today.html?storeId=${encodeURIComponent(storeId)}&department=${encodeURIComponent(currentScope.department)}`);
+        return false;
+      }
+      return true;
+    }
+
+    async function loadStoreLabel() {
+      const storeSnap = await getDoc(doc(db, "stores", storeId));
+      currentStoreName = storeSnap.exists() ? (storeSnap.data()?.name || storeId) : storeId;
+      scopeLine.textContent = `${currentStoreName} / ${department} - choose the next logbook to open.`;
+      updateNavigationLinks();
+    }
+
+    async function ensureTodayInstances({ quiet = false } = {}) {
+      if (!quiet) setStatus("Generating…");
+
+      const [rulesSnap, timerRules] = await Promise.all([
+        getDocs(query(collection(db, "store_template_rules"), where("storeId", "==", storeId))),
+        loadDepartmentTimerRulesForStore(storeId)
+      ]);
+
+      if (rulesSnap.empty) {
+        if (!quiet) {
+          setNotice("No logbooks are assigned to this store yet.");
+          setStatus("No assignments", "error");
+        }
+        return { created: 0, assigned: 0 };
+      }
+
+      const timerByDepartment = new Map(
+        timerRules.map((rule) => [normalizeDepartmentValue(rule.department, "General"), rule])
+      );
+
+      const existingSnap = await getDocs(query(
+        collection(db, "logbook_instances"),
+        where("storeId", "==", storeId),
+        where("date", "==", todayISO)
+      ));
+      const existingIds = new Set(existingSnap.docs.map((row) => row.id));
+
+      let created = 0;
+      for (const row of rulesSnap.docs) {
+        const rule = row.data() || {};
+        const templateId = clean(rule.templateId);
+        const ruleDepartment = normalizeDepartmentValue(rule.department, "General");
+        if (!templateId) continue;
+
+        const instanceId = buildLogbookInstanceId({
+          storeId,
+          department: ruleDepartment,
+          templateId,
+          dateKey: todayISO
+        });
+        if (!instanceId || existingIds.has(instanceId)) continue;
+
+        const timerRule = timerByDepartment.get(ruleDepartment);
+        const timerFields = buildTimerFields({
+          dateKey: todayISO,
+          dueTime: timerRule?.dueTime || "",
+          status: "not_started"
+        });
+
+        await setDoc(doc(db, "logbook_instances", instanceId), {
+          storeId,
+          department: ruleDepartment,
+          templateId,
+          templateName: rule.templateName || null,
+          section: rule.templateName || templateId,
+          date: todayISO,
+          status: "not_started",
+          complianceStatus: "incomplete",
+          locked: false,
+          reminderRequestedAt: null,
+          reminderRequestedBy: null,
+          hasReportableNotes: false,
+          exceptionCount: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          ...timerFields
+        }, { merge: true });
+        existingIds.add(instanceId);
+        created += 1;
+      }
+
+      if (!quiet) {
+        setNotice("");
+        setStatus(created ? `Generated ${created} logbook${created === 1 ? "" : "s"}` : "Today's logbooks are up to date", "success");
+      }
+      return { created, assigned: rulesSnap.size };
+    }
+
+    async function requestReminder(instance) {
+      const nowIso = new Date().toISOString();
+      const requestedBy = auth.currentUser?.uid || auth.currentUser?.email || "unknown";
+      const timerState = deriveTimerState({
+        dueAtIso: instance.dueAtIso || "",
+        status: instance.status || ""
+      });
+
+      await setDoc(doc(db, "logbook_instances", instance.id), {
+        reminderRequestedAt: nowIso,
+        reminderRequestedBy: requestedBy,
+        timerState,
+        updatedAt: nowIso
+      }, { merge: true });
+
+      await writeUserActivity({
+        actionType: "requested_reminder",
+        summary: `Requested reminder for ${instance.templateName || instance.templateId || "logbook"}`,
+        storeId,
+        department,
+        section: instance.templateName || instance.templateId || "Logbook",
+        templateId: instance.templateId || "",
+        instanceId: instance.id,
+        dateKey: todayISO,
+        metadata: {
+          dueTime: instance.dueTime || null
+        }
+      });
+    }
+
+    function createPill(label, className = "") {
+      const pill = document.createElement("span");
+      pill.className = `pill ${className}`.trim();
+      pill.textContent = label;
+      return pill;
+    }
+
+    function getItemUiState(instance) {
+      const liveTimer = describeTimerWindow({
+        dueAtIso: instance.dueAtIso || "",
+        status: instance.status || ""
+      });
+      const status = String(instance.status || "not_started").toLowerCase();
+      const reminderRequested = Boolean(instance.reminderRequestedAt);
+      const needsAttention =
+        liveTimer.state === "warning" ||
+        liveTimer.state === "urgent" ||
+        liveTimer.state === "overdue" ||
+        reminderRequested ||
+        Number(instance.exceptionCount || 0) > 0 ||
+        Boolean(instance.hasReportableNotes);
+      let priority = 4;
+      if (liveTimer.state === "overdue") priority = 0;
+      else if (liveTimer.state === "urgent") priority = 1;
+      else if (needsAttention) priority = 2;
+      else if (status === "in_progress") priority = 3;
+      else if (status === "not_started") priority = 4;
+      else if (status === "completed") priority = 6;
+      else if (status === "skipped") priority = 7;
+      const dueAtMs = instance.dueAtIso ? Date.parse(instance.dueAtIso) : Number.MAX_SAFE_INTEGER;
+      return {
+        liveTimer,
+        status,
+        reminderRequested,
+        needsAttention,
+        priority,
+        dueAtMs: Number.isFinite(dueAtMs) ? dueAtMs : Number.MAX_SAFE_INTEGER
+      };
+    }
+
+    function renderItem(instance, uiState) {
+      const { liveTimer, status, reminderRequested } = uiState;
+      const wrapper = document.createElement("div");
+      wrapper.className = `item ${liveTimer.state === "warning" ? "warning" : liveTimer.state === "urgent" ? "urgent" : liveTimer.state === "overdue" ? "overdue" : ""}`.trim();
+
+      const head = document.createElement("div");
+      head.className = "item-head";
+
+      const left = document.createElement("div");
+      const openRecord = () => {
+        window.location.href = `fill.html?instanceId=${encodeURIComponent(instance.id)}&templateId=${encodeURIComponent(instance.templateId || "")}&storeId=${encodeURIComponent(storeId)}&department=${encodeURIComponent(department)}&date=${encodeURIComponent(todayISO)}`;
+      };
+      if (status !== "skipped") {
+        left.className = "item-summary";
+        left.tabIndex = 0;
+        left.setAttribute("role", "link");
+        left.title = "Open this logbook.";
+        left.addEventListener("click", openRecord);
+        left.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openRecord();
+          }
+        });
+      }
+      const title = document.createElement("div");
+      title.className = "item-title";
+      title.textContent = instance.templateName || instance.templateId || "Logbook";
+      const meta = document.createElement("div");
+      meta.className = "item-meta";
+      meta.textContent = `Instance: ${instance.id}`;
+      left.appendChild(title);
+      left.appendChild(meta);
+
+      const chipRow = document.createElement("div");
+      chipRow.className = "chip-row";
+      chipRow.appendChild(createPill(status.replace(/_/g, " "), status === "completed" ? "completed" : status === "in_progress" ? "in_progress" : ""));
+      if (instance.dueTime) {
+        chipRow.appendChild(createPill(`Due ${instance.dueTime}`, liveTimer.state === "none" ? "" : liveTimer.state));
+        chipRow.appendChild(createPill(liveTimer.text, liveTimer.state));
+      } else {
+        chipRow.appendChild(createPill("No timer assigned", "none"));
+      }
+      if (instance.exceptionCount) {
+        chipRow.appendChild(createPill(`${instance.exceptionCount} exception${instance.exceptionCount === 1 ? "" : "s"}`, "overdue"));
+      }
+      if (instance.hasReportableNotes) {
+        chipRow.appendChild(createPill("Notes added", "warning"));
+      }
+      if (reminderRequested) {
+        chipRow.appendChild(createPill("Reminder requested", "warning"));
+      }
+      left.appendChild(chipRow);
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      if (instance.dueTime && status !== "completed" && status !== "skipped") {
+        if (reminderRequested) {
+          const reminderState = document.createElement("span");
+          reminderState.className = "action-state";
+          reminderState.textContent = "Reminder Requested";
+          reminderState.title = "A reminder has already been requested for this logbook.";
+          actions.appendChild(reminderState);
+        } else {
+          const reminderBtn = document.createElement("button");
+          reminderBtn.type = "button";
+          reminderBtn.className = `btn reminder ${liveTimer.state}`.trim();
+          reminderBtn.textContent = "Request Reminder";
+          reminderBtn.title = "Mark this timed logbook for manager and admin attention.";
+          reminderBtn.addEventListener("click", async () => {
+            try {
+              setStatus("Requesting reminder…");
+              await requestReminder(instance);
+              await loadToday();
+            } catch (error) {
+              console.error(error);
+              setStatus("Reminder failed", "error");
+            }
+          });
+          actions.appendChild(reminderBtn);
+        }
+      }
+
+      if (status !== "skipped") {
+        const openBtn = document.createElement("button");
+        openBtn.type = "button";
+        openBtn.className = "btn primary";
+        openBtn.textContent = status === "completed" ? "View" : "Open";
+        openBtn.addEventListener("click", openRecord);
+        actions.appendChild(openBtn);
+      }
+
+      head.appendChild(left);
+      head.appendChild(actions);
+      wrapper.appendChild(head);
+      return wrapper;
+    }
+
+    async function loadToday() {
+      setStatus("Loading…");
+      listEl.replaceChildren();
+      await loadStoreLabel();
+
+      const snap = await getDocs(query(
+        collection(db, "logbook_instances"),
+        where("storeId", "==", storeId),
+        where("date", "==", todayISO)
+      ));
+
+      const items = snap.docs
+        .map((row) => ({ id: row.id, ...row.data() }))
+        .filter((row) => normalizeDepartmentValue(row.department, "General") === department)
+        .map((instance) => ({ instance, ui: getItemUiState(instance) }))
+        .sort((a, b) => {
+          if (a.ui.priority !== b.ui.priority) return a.ui.priority - b.ui.priority;
+          if (a.ui.dueAtMs !== b.ui.dueAtMs) return a.ui.dueAtMs - b.ui.dueAtMs;
+          return String(a.instance.templateName || a.instance.templateId || "").localeCompare(String(b.instance.templateName || b.instance.templateId || ""));
+        });
+
+      if (!items.length) {
+        listEl.innerHTML = `<div class="empty">No logbooks have been generated for ${department} yet.</div>`;
+        setNotice("Use Generate Today's Logbooks to create the department list from the current assignments.");
+        setStatus("No logbooks", "error");
+        return;
+      }
+
+      setNotice("");
+      items.forEach((item) => listEl.appendChild(renderItem(item.instance, item.ui)));
+      setStatus(`Loaded ${items.length}`, "success");
+    }
+
+    async function init() {
+      const canContinue = await ensureRouteAccess();
+      if (!canContinue) return;
+      await ensureTodayInstances({ quiet: true });
+      await loadToday();
+      refreshTicker = window.setInterval(() => {
+        void loadToday();
+      }, 60000);
+    }
+
+    refreshBtn.addEventListener("click", () => {
+      void ensureTodayInstances().then(() => loadToday()).catch((error) => {
+        console.error(error);
+        setStatus("Refresh failed", "error");
+      });
+    });
+
+    generateBtn.addEventListener("click", async () => {
+      try {
+        await ensureTodayInstances();
+        await loadToday();
+      } catch (error) {
+        console.error(error);
+        setStatus("Generate failed", "error");
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (refreshTicker) window.clearInterval(refreshTicker);
+    });
+
+    init().catch((error) => {
+      console.error(error);
+      listEl.innerHTML = `<div class="empty">Failed to load today's logbooks.</div>`;
+      setStatus("Failed", "error");
+    });
+  </script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

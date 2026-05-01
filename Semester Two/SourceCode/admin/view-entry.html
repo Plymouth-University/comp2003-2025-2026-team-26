@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Admin &bull; View Entry (Read-Only)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-admin.js"></script>
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border-color: #e5e7eb;
+      --border-hover: #d1d5db;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --border-color: #262626;
+      --border-hover: #404040;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #052e16;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; transition: background 0.3s, color 0.3s; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:14px 16px; background:var(--bg-secondary); border-bottom:1px solid var(--border-color); box-shadow: var(--shadow-sm);
+      flex-wrap:wrap;
+    }
+    .header-left { display:flex; flex-direction:column; gap:4px; }
+    header h1 { margin:0; font-size:18px; letter-spacing:.02em; color:var(--text-primary); }
+    header .sub { margin:2px 0 0; font-size:12px; color:var(--text-secondary); }
+    .header-right { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-left:auto; }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border:1px solid var(--border-color); border-radius:50px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; cursor:pointer; min-height:44px; text-decoration:none; transition: background 0.2s; }
+    .back-btn:hover { background:var(--bg-tertiary); text-decoration:none; }
+    .theme-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border:1px solid var(--border-color); border-radius:50%; background:var(--bg-secondary); color:var(--text-primary); font-size:1.25rem; cursor:pointer; transition: background 0.2s; }
+    .theme-toggle:hover { background:var(--bg-tertiary); }
+    .theme-toggle:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; border:1px solid var(--accent-primary); background:#dbeafe; color:#1d4ed8; white-space: nowrap; }
+    .badge.success { border-color: var(--accent-success); background: var(--accent-success-bg); color:#166534; }
+    .badge.error { border-color: var(--accent-danger); background: var(--accent-danger-bg); color:#991b1b; }
+    [data-theme="dark"] .badge { background:#1e3a5f; color:#93c5fd; }
+    [data-theme="dark"] .badge.success { color:#86efac; }
+    [data-theme="dark"] .badge.error { color:#fca5a5; }
+    .btn { border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); padding:10px 16px; font-size:14px; min-height:44px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition: background-color 0.2s, border-color 0.2s; }
+    .btn:hover { background:var(--bg-tertiary); }
+    .btn.primary { background:var(--accent-primary); border-color:var(--accent-primary); color:white; }
+    .btn.primary:hover { background:var(--accent-primary-hover); }
+    .btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+    main { max-width: 1024px; margin: 18px auto 42px; padding: 0 16px; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; box-shadow: var(--shadow-sm); margin-bottom: 14px; overflow-x:auto; }
+    .meta-card { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
+    .meta-item { }
+    .meta-item .label { font-size:12px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+    .meta-item .value { font-size:14px; font-weight:600; color:var(--text-primary); margin-top:4px; }
+    .h1 { font-size:22px; font-weight:600; letter-spacing:.02em; text-transform: uppercase; text-align:center; color:var(--text-primary); margin-bottom:8px; }
+    .h2 { font-size:18px; font-weight:600; text-transform: uppercase; color:var(--text-primary); margin-bottom:8px; }
+    .field-row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; padding:10px 0; border-bottom:1px solid var(--border-color); }
+    .field-row:last-child { border-bottom:none; }
+    .field-label { min-width:200px; font-weight:600; color:var(--text-primary); }
+    .field-value { flex:1; color:var(--text-primary); }
+    .field-value.empty { color:var(--text-muted); font-style:italic; }
+    .field-value.yes { color:var(--accent-success); font-weight:600; }
+    .field-value.no { color:var(--accent-danger); font-weight:600; }
+    .field-value img { max-width:300px; border:1px solid var(--border-color); border-radius:8px; }
+    table.grid { width:100%; border-collapse:collapse; margin-top:10px; background:var(--bg-secondary); border-radius:8px; overflow:hidden; border:1px solid var(--border-color); }
+    table.grid th, table.grid td { border:1px solid var(--border-color); padding:10px; vertical-align:top; color:var(--text-primary); font-size:13px; }
+    table.grid th { background:var(--bg-tertiary); text-transform:uppercase; letter-spacing:.04em; font-size:12px; color:var(--text-secondary); font-weight:600; }
+    table.grid td.empty { color:var(--text-muted); font-style:italic; }
+    .temp-ok { color:var(--accent-success); font-weight:600; }
+    .temp-warn { color:var(--accent-danger); font-weight:600; }
+    .empty { border:1px dashed var(--border-color); border-radius:10px; padding:24px; text-align:center; color:var(--text-secondary); background:var(--bg-tertiary); }
+    .status-pill { font-size:12px; padding:6px 12px; border-radius:50px; border:1px solid var(--border-color); display:inline-block; }
+    .status-pill.completed { border-color:#22c55e; background:#dcfce7; color:#166534; }
+    .status-pill.in_progress { border-color:#f59e0b; background:#fef3c7; color:#92400e; }
+    .status-pill.skipped { border-color:#9ca3af; background:#f3f4f6; color:#6b7280; }
+    [data-theme="dark"] .status-pill.completed { background:#14532d; color:#86efac; }
+    [data-theme="dark"] .status-pill.in_progress { color:#fcd34d; background:#78350f; }
+    [data-theme="dark"] .status-pill.skipped { background:#374151; color:#9ca3af; }
+    #pdfPreview { background:var(--bg-secondary); border-radius:10px; border:1px solid var(--border-color); padding:12px; box-shadow:var(--shadow-sm); display:none; }
+    #pdfPreview .preview-frame { background:white; color:#1f2937; padding:18px; border-radius:8px; max-width:800px; margin:0 auto; box-shadow:var(--shadow-sm); }
+    @media (max-width: 900px) {
+      .field-row { flex-direction:column; }
+      .field-label { min-width:100%; }
+      table.grid { font-size:12px; }
+      table.grid th, table.grid td { padding:8px; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body>
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+        Admin • View Entry (Read-Only)
+      </h1>
+      <div class="sub" id="headerSub">Loading entry...</div>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading...</span>
+      <a class="back-btn" id="backBtn" href="search.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back
+      </a>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <button id="exportBtn" class="btn primary" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+        Export to PDF
+      </button>
+      <span style="color:var(--text-secondary); font-size:12px;">PDF downloads to your browser Downloads folder.</span>
+    </div>
+
+    <div class="card meta-card" id="metaCard">
+      <div class="meta-item">
+        <div class="label">Store</div>
+        <div class="value" id="metaStore">-</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Template</div>
+        <div class="value" id="metaTemplate">-</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Date</div>
+        <div class="value" id="metaDate">-</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Status</div>
+        <div class="value" id="metaStatus">-</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Last Updated</div>
+        <div class="value" id="metaUpdated">-</div>
+      </div>
+    </div>
+
+    <div id="formRoot"></div>
+
+    <div id="pdfPreview"></div>
+  </main>
+
+  <script type="module">
+    import { db } from "../shared/logbook-app.js";
+    import {
+      collection, doc, getDocs, getDoc, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { writeUserActivity } from "../shared/activity-log.js";
+    import { buildBusinessWeekRows, mondayOfBusinessWeek } from "../shared/business-time.js";
+    import { buildWordStylePdfDom, exportDomToPdf, sanitizeFilename } from "../shared/pdf-export.js";
+    import { getSignatureImageUrl } from "../shared/signature-storage.js";
+    import { loadEntryMeta } from "../shared/instance-entry-storage.js";
+    import { waitForPageGuard } from "../shared/page-guard.js";
+
+    await waitForPageGuard();
+    const params = new URLSearchParams(window.location.search);
+    const instanceId = params.get("instanceId");
+    const templateId = params.get("templateId");
+    const storeId = params.get("storeId");
+    const dateKey = params.get("date");
+    const back = params.get("back");
+
+    const statusEl = document.getElementById("status");
+    const headerSub = document.getElementById("headerSub");
+    const formRoot = document.getElementById("formRoot");
+    const exportBtn = document.getElementById("exportBtn");
+    const backBtn = document.getElementById("backBtn");
+
+    if (back && backBtn) backBtn.href = back;
+
+    let blocks = [];
+    let values = {};
+    let instanceData = {};
+    let templateData = {};
+    let resolvedStoreName = storeId || "Unknown";
+    let recordReady = false;
+
+    function syncPageActions(enabled) {
+      recordReady = Boolean(enabled);
+      exportBtn.disabled = !recordReady;
+    }
+
+    function setStatus(msg, kind="info") {
+      statusEl.textContent = msg;
+      statusEl.classList.remove("success", "error");
+      if (kind === "success") statusEl.classList.add("success");
+      if (kind === "error") statusEl.classList.add("error");
+    }
+
+    function getCellKey(blockId, rowId, colKey) { 
+      return `${blockId}::${rowId}::${colKey}`; 
+    }
+
+    function mondayOfWeek(dateStr) {
+      return mondayOfBusinessWeek(dateStr || dateKey);
+    }
+
+    function buildAutoDayRows(dateStr, showDates){
+      return buildBusinessWeekRows(dateStr || dateKey, showDates);
+    }
+
+    function buildStatusPill(kind, label) {
+      const pill = document.createElement("span");
+      pill.className = `status-pill ${String(kind || "unknown").toLowerCase().replace(/[^a-z0-9_-]+/g, "-")}`;
+      pill.textContent = label;
+      return pill;
+    }
+
+    async function loadEntry() {
+      syncPageActions(false);
+      if (!templateId || !dateKey) {
+        setStatus("Missing parameters", "error");
+        formRoot.innerHTML = '<div class="empty">Missing required parameters (templateId, date). Go back and try again.</div>';
+        return;
+      }
+
+      setStatus("Loading...");
+
+      try {
+        // Load instance metadata
+        if (instanceId) {
+          const instanceSnap = await getDoc(doc(db, "logbook_instances", instanceId));
+          if (instanceSnap.exists()) {
+            instanceData = instanceSnap.data();
+          }
+        }
+
+        // Load template definition
+        const templateSnap = await getDoc(doc(db, "logbook_templates", templateId));
+        if (templateSnap.exists()) {
+          templateData = templateSnap.data();
+        }
+
+        // Load template blocks
+        const blocksCol = collection(db, "logbook_templates", templateId, "blocks");
+        const blocksSnap = await getDocs(query(blocksCol, orderBy("sort_index")));
+        blocksSnap.forEach(d => blocks.push({ block_id: d.id, ...d.data() }));
+
+        // Load saved values
+        const entryMeta = await loadEntryMeta({ instanceId, templateId, dateKey });
+        if (entryMeta?.values) values = entryMeta.values;
+
+        // Get store name
+        let storeName = storeId;
+        try {
+          const storeSnap = await getDoc(doc(db, "stores", storeId));
+          if (storeSnap.exists()) {
+            storeName = storeSnap.data().name || storeId;
+          }
+        } catch (e) { }
+        resolvedStoreName = storeName || storeId || "Unknown";
+
+        // Update meta display
+        document.getElementById("metaStore").textContent = storeName;
+        document.getElementById("metaTemplate").textContent = templateData.name || templateId;
+        document.getElementById("metaDate").textContent = dateKey;
+        
+        const status = instanceData.status || "unknown";
+        const statusEl = document.getElementById("metaStatus");
+        statusEl.replaceChildren(buildStatusPill(status, String(status).replace(/_/g, " ")));
+        
+        document.getElementById("metaUpdated").textContent = instanceData.updatedAt ? new Date(instanceData.updatedAt).toLocaleString() : "N/A";
+
+        headerSub.textContent = `${templateData.name || templateId} - ${storeName} - ${dateKey}`;
+
+        renderForm();
+        syncPageActions(true);
+        await writeUserActivity({
+          actionType: "opened_section",
+          summary: `Opened entry ${templateData.name || templateId}`,
+          storeId,
+          storeName: resolvedStoreName,
+          department: templateData.department || templateData.dept || "",
+          section: templateData.section || templateData.logbookSection || templateData.name || templateId,
+          templateId,
+          instanceId,
+          dateKey,
+          metadata: {
+            source: "admin_view_entry"
+          }
+        });
+        setStatus("Loaded", "success");
+      } catch (e) {
+        console.error(e);
+        syncPageActions(false);
+        setStatus("Load failed", "error");
+        formRoot.innerHTML = '<div class="empty">Failed to load this entry. Please refresh and try again.</div>';
+      }
+    }
+
+    function renderTable(block) {
+      const cfg = block.config || {};
+      const cols = Array.isArray(cfg.columns) ? cfg.columns : [];
+      let rows = Array.isArray(cfg.rows) ? cfg.rows : [];
+
+      if (cfg.row_mode === "per_day") {
+        rows = buildAutoDayRows(dateKey, !!cfg.show_dates_in_rows);
+      }
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("div");
+      title.className = "h2";
+      title.textContent = cfg.title || block.label || "Table";
+      card.appendChild(title);
+
+      if (cfg.note) {
+        const note = document.createElement("div");
+        note.style.cssText = "color:var(--text-secondary); font-size:12px; margin-bottom:8px;";
+        note.textContent = cfg.note;
+        card.appendChild(note);
+      }
+
+      const table = document.createElement("table");
+      table.className = "grid";
+
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      cols.forEach(c => {
+        const th = document.createElement("th");
+        th.textContent = c.label || c.key || "";
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        cols.forEach(c => {
+          const td = document.createElement("td");
+          const rowId = r.id || r.label || "row";
+          const colKey = c.key || "col";
+          const key = getCellKey(block.block_id, rowId, colKey);
+          const val = values[key];
+
+          if (c.input === "rowLabel") {
+            td.textContent = r.label || r.id || "";
+          } else if (c.input === "yn") {
+            if (val === "yes") {
+              const badge = document.createElement("span");
+              badge.className = "temp-ok";
+              badge.textContent = "Yes";
+              td.appendChild(badge);
+            } else if (val === "no") {
+              const badge = document.createElement("span");
+              badge.className = "temp-warn";
+              badge.textContent = "No";
+              td.appendChild(badge);
+            } else {
+              td.className = "empty";
+              td.textContent = "-";
+            }
+          } else if (c.input === "number") {
+            if (val !== undefined && val !== "" && val !== null) {
+              // Check for temperature range
+              const min = typeof c.min === "number" ? c.min : null;
+              const max = typeof c.max === "number" ? c.max : null;
+              const num = Number(val);
+              let cls = "";
+              if (min !== null || max !== null) {
+                let ok = true;
+                if (min !== null && num < min) ok = false;
+                if (max !== null && num > max) ok = false;
+                cls = ok ? "temp-ok" : "temp-warn";
+              }
+              const badge = document.createElement("span");
+              if (cls) badge.className = cls;
+              badge.textContent = String(val);
+              td.appendChild(badge);
+            } else {
+              td.className = "empty";
+              td.textContent = "-";
+            }
+          } else if (c.input === "checkbox") {
+            const badge = document.createElement("span");
+            badge.className = (val === "true" || val === true) ? "temp-ok" : "empty";
+            badge.textContent = (val === "true" || val === true) ? "✓" : "—";
+            td.appendChild(badge);
+          } else if (c.input === "tickcross") {
+            if (val === "tick") {
+              const badge = document.createElement("span");
+              badge.className = "temp-ok";
+              badge.textContent = "✓";
+              td.appendChild(badge);
+            } else if (val === "cross") {
+              const badge = document.createElement("span");
+              badge.className = "temp-warn";
+              badge.textContent = "✗";
+              td.appendChild(badge);
+            } else {
+              td.className = "empty";
+              td.textContent = "-";
+            }
+          } else if (c.input === "initials") {
+            td.textContent = val ? String(val).toUpperCase() : "";
+            if (!val) { td.className = "empty"; td.textContent = "-"; }
+          } else {
+            td.textContent = val || "";
+            if (!val) {
+              td.className = "empty";
+              td.textContent = "-";
+            }
+          }
+
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      card.appendChild(table);
+      return card;
+    }
+
+    function renderForm() {
+      formRoot.innerHTML = "";
+
+      if (blocks.length === 0) {
+        formRoot.innerHTML = '<div class="empty">This logbook has no blocks defined.</div>';
+        return;
+      }
+
+      blocks.forEach(b => {
+        const cfg = b.config || {};
+        const label = b.label || b.type;
+        const val = values[b.block_id];
+
+        if (b.type === "heading") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const h = document.createElement("div");
+          h.className = "h1";
+          h.textContent = label;
+          card.appendChild(h);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        if (b.type === "section") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const h = document.createElement("div");
+          h.className = "h2";
+          h.textContent = label;
+          card.appendChild(h);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        if (b.type === "table") {
+          formRoot.appendChild(renderTable(b));
+          return;
+        }
+
+        if (b.type === "week_commencing") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const row = document.createElement("div");
+          row.className = "field-row";
+          const labelEl = document.createElement("div");
+          labelEl.className = "field-label";
+          labelEl.textContent = label;
+          row.appendChild(labelEl);
+          const valDiv = document.createElement("div");
+          valDiv.className = "field-value";
+          valDiv.textContent = val || mondayOfWeek(dateKey);
+          row.appendChild(valDiv);
+          card.appendChild(row);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        if (b.type === "signature") {
+          const card = document.createElement("div");
+          card.className = "card";
+          const row = document.createElement("div");
+          row.className = "field-row";
+          const labelEl = document.createElement("div");
+          labelEl.className = "field-label";
+          labelEl.textContent = label;
+          row.appendChild(labelEl);
+          const valDiv = document.createElement("div");
+          valDiv.className = "field-value";
+          const imageUrl = getSignatureImageUrl(val);
+          if (imageUrl) {
+            const img = document.createElement("img");
+            img.src = imageUrl;
+            img.alt = "Signature";
+            valDiv.appendChild(img);
+          } else {
+            valDiv.className += " empty";
+            valDiv.textContent = "No signature";
+          }
+          row.appendChild(valDiv);
+          card.appendChild(row);
+          formRoot.appendChild(card);
+          return;
+        }
+
+        // Generic field
+        const card = document.createElement("div");
+        card.className = "card";
+        const row = document.createElement("div");
+        row.className = "field-row";
+        const labelEl = document.createElement("div");
+        labelEl.className = "field-label";
+        labelEl.textContent = label;
+        row.appendChild(labelEl);
+        const valDiv = document.createElement("div");
+
+        if (b.type === "yes_no") {
+          if (val === "yes") {
+            valDiv.className = "field-value yes";
+            valDiv.textContent = cfg.yes_label || "Yes";
+          } else if (val === "no") {
+            valDiv.className = "field-value no";
+            valDiv.textContent = cfg.no_label || "No";
+          } else {
+            valDiv.className = "field-value empty";
+            valDiv.textContent = "No data entered";
+          }
+        } else if (b.type === "temperature") {
+          if (val !== undefined && val !== "" && val !== null) {
+            const num = Number(val);
+            const min = typeof cfg.min === "number" ? cfg.min : null;
+            const max = typeof cfg.max === "number" ? cfg.max : null;
+            let ok = true;
+            if (min !== null && num < min) ok = false;
+            if (max !== null && num > max) ok = false;
+            valDiv.className = "field-value " + (ok ? "temp-ok" : "temp-warn");
+            valDiv.textContent = `${val} C`;
+          } else {
+            valDiv.className = "field-value empty";
+            valDiv.textContent = "No data entered";
+          }
+        } else {
+          valDiv.className = "field-value" + (!val ? " empty" : "");
+          valDiv.textContent = val || "No data entered";
+        }
+
+        row.appendChild(valDiv);
+        card.appendChild(row);
+        formRoot.appendChild(card);
+      });
+    }
+
+    function buildPdfDom() {
+      return buildWordStylePdfDom({
+        title: templateData.name || "Logbook",
+        templateId: templateId || "",
+        storeName: resolvedStoreName || storeId || "Unknown",
+        dateKey: dateKey || "",
+        blocks,
+        values
+      });
+    }
+
+    exportBtn.addEventListener("click", async () => {
+      if (!recordReady) {
+        setStatus("Load a record first", "error");
+        return;
+      }
+      const pdfDom = buildPdfDom();
+      const filename = `${sanitizeFilename(templateData.name || "logbook")}_${sanitizeFilename(storeId || "store")}_${sanitizeFilename(dateKey || "date")}.pdf`;
+
+      try {
+        setStatus("Generating PDF...");
+        await exportDomToPdf(pdfDom, filename, {
+          margin: 0.4,
+          image: { type: "jpeg", quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "in", format: "a4", orientation: "portrait" }
+        });
+        await writeUserActivity({
+          actionType: "exported_record",
+          summary: `Exported entry ${templateData.name || templateId}`,
+          storeId,
+          storeName: resolvedStoreName,
+          department: templateData.department || templateData.dept || "",
+          section: templateData.section || templateData.logbookSection || templateData.name || templateId,
+          templateId,
+          instanceId,
+          dateKey,
+          metadata: {
+            source: "admin_view_entry",
+            filename
+          }
+        });
+        setStatus("PDF downloaded", "success");
+      } catch (error) {
+        console.error(error);
+        setStatus("PDF export failed", "error");
+      }
+    });
+
+    // Initialize
+    loadEntry();
+  </script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

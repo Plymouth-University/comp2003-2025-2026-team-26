@@ -1,0 +1,2605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Admin &bull; Logbook Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-admin.js"></script>
+    <script src="../shared/theme-init.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border-color: #e5e7eb;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-success-text: #166534;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --accent-danger-text: #991b1b;
+      --accent-warning: #f97316;
+      --accent-info-bg: #dbeafe;
+      --accent-info-text: #1d4ed8;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --border-color: #262626;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #052e16;
+      --accent-success-text: #86efac;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --accent-danger-text: #fecaca;
+      --accent-warning: #fb923c;
+      --accent-info-bg: #172554;
+      --accent-info-text: #93c5fd;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.6);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin:0; display:flex; height:100vh; min-height:100vh; background:var(--bg-primary); color:var(--text-primary); overscroll-behavior-y: contain; }
+    #toolbox { width:320px; max-width:100%; background:var(--bg-secondary); border-right:1px solid var(--border-color); padding:18px; box-sizing:border-box; overflow-y:auto; box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
+    #toolbox h1 { margin:0 0 6px; font-size:20px; color:var(--text-primary); }
+    #toolbox .sub { margin:0 0 14px; font-size:12px; color:var(--text-secondary); }
+    #toolbox h2 { margin:18px 0 10px; font-size:12px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.08em; }
+    .toolbox-item { background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:10px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; cursor:grab; touch-action:none; font-size:16px; transition: box-shadow 0.2s, transform 0.15s; -webkit-user-select:none; user-select:none; }
+    .toolbox-item:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .toolbox-item:active { cursor:grabbing; }
+    .toolbox-item .pill { font-size:12px; padding:2px 10px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); text-transform:uppercase; }
+    #main { flex:1; display:flex; flex-direction:column; }
+    #header { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 18px; background:var(--bg-secondary); border-bottom:1px solid var(--border-color); box-shadow: var(--shadow-sm); flex-wrap:wrap; }
+    #header-left { display:flex; align-items:center; gap:12px; }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border:1px solid var(--border-color); border-radius:50px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; cursor:pointer; min-height:44px; text-decoration:none; transition: background 0.2s; }
+    .back-btn:hover { background:var(--bg-tertiary); text-decoration:none; }
+    #titles { display:flex; flex-direction:column; gap:2px; }
+    #titles strong { font-size:18px; color:var(--text-primary); }
+    #titles small { font-size:12px; color:var(--text-secondary); }
+    #header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; border:1px solid var(--accent-primary); background:var(--accent-info-bg); color:var(--accent-info-text); white-space:nowrap; }
+    .badge.success { border-color:var(--accent-success); background:var(--accent-success-bg); color:var(--accent-success-text); }
+    .badge.error { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger-text); }
+    #modeToggle { border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); padding:10px 14px; font-size:14px; min-height:44px; cursor:pointer; display:flex; align-items:center; gap:8px; transition: background-color 0.2s; }
+    #modeToggle:hover { background:var(--bg-tertiary); }
+    #modeToggle .dot { width:10px; height:10px; border-radius:50px; background:var(--accent-success); }
+    #modeToggle.preview .dot { background:var(--accent-warning); }
+    .theme-toggle { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:50%; width:44px; height:44px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.2s; }
+    .theme-toggle:hover { background:var(--bg-tertiary); }
+    #canvas { padding:18px; flex:1; overflow-y:auto; background:var(--bg-primary); }
+    #canvas-inner { min-height:420px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-secondary); padding:16px; box-shadow:var(--shadow-sm); touch-action:none; }
+    #canvas-inner.drag-over { border-color:var(--accent-primary); box-shadow:0 0 0 1px rgba(37,99,235,0.25),0 0 28px rgba(37,99,235,0.15); }
+    .empty { border:1px dashed var(--border-color); border-radius:10px; padding:18px; text-align:center; color:var(--text-secondary); font-size:14px; background:var(--bg-tertiary); }
+    .block { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:14px; margin-bottom:14px; display:flex; gap:12px; align-items:flex-start; cursor:grab; touch-action:none; box-shadow: var(--shadow-sm); transition: border-color 0.2s, box-shadow 0.2s; -webkit-user-select:none; user-select:none; }
+    .block:hover { border-color:var(--accent-primary); box-shadow: 0 2px 8px rgba(37,99,235,0.1); }
+    .block-inner { flex:1; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; }
+    .block-label { font-size:16px; font-weight:600; color:var(--text-primary); }
+    .block-type { font-size:12px; text-transform:uppercase; padding:3px 10px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-tertiary); color:var(--text-secondary); align-self:flex-start; margin-top:2px; }
+    .indent-1 { margin-left:34px; }
+    /* Section wrapper in builder */
+    .section-wrap { background:var(--bg-tertiary); border:1px solid var(--border-color); border-left:3px solid var(--accent-primary); border-radius:10px; padding:0 0 8px; margin-bottom:14px; overflow:visible; }
+    .section-wrap > .block { margin:0 10px 8px; }
+    .section-wrap > .block:last-child { margin-bottom:0; }
+    .section-wrap > .section-head { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+    .section-head .block-label { font-size:14px; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:.04em; }
+    .section-head .block-type { font-size:11px; text-transform:uppercase; padding:2px 8px; border-radius:50px; border:1px solid var(--accent-primary); background:var(--accent-info-bg); color:var(--accent-info-text); }
+    .section-head .block-actions { display:flex; gap:8px; margin-left:auto; }
+    .section-children { padding:0 10px; min-height:32px; }
+    .section-children.drag-over { background:rgba(37,99,235,0.06); border-radius:8px; }
+    .section-children .empty-section { border:1px dashed var(--border-color); border-radius:8px; padding:12px; text-align:center; color:var(--text-muted); font-size:12px; }
+    .block-actions { display:flex; flex-wrap:wrap; gap:8px; margin-left:auto; }
+    .action { border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); font-size:14px; padding:10px 12px; min-height:46px; min-width:46px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background-color 0.2s; }
+    .action:hover { background:var(--bg-tertiary); }
+    .hint { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+    .drag-ghost { position:fixed; pointer-events:none; z-index:9999; padding:12px 16px; border-radius:50px; background:var(--accent-primary); color:#ffffff; font-size:14px; display:inline-flex; align-items:center; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translate(-50%,-50%); border:1px solid var(--accent-primary-hover); }
+    .drag-ghost .type-pill { font-size:12px; text-transform:uppercase; padding:2px 10px; border-radius:50px; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:9998; }
+    .modal { width:min(1060px,94vw); max-height:86vh; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden; }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 16px 0; flex-shrink:0; }
+    .modal-header h3 { margin:0; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+    .modal-close { width:36px; height:36px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:all .15s; flex-shrink:0; }
+    .modal-close:hover { background:var(--accent-danger-bg); border-color:var(--accent-danger); color:var(--accent-danger); }
+    .modal-body { flex:1; overflow-y:auto; padding:0 16px; min-height:0; }
+    .modal-footer { padding:12px 16px 16px; flex-shrink:0; border-top:1px solid var(--border-color); background:var(--bg-secondary); }
+    .modal-toast { display:none; padding:10px 14px; border-radius:8px; font-size:13px; margin-top:8px; animation:toastIn .2s ease; }
+    .modal-toast.warn { display:block; background:var(--accent-danger-bg); border:1px solid var(--accent-danger); color:var(--accent-danger-text); }
+    .modal-toast.info { display:block; background:var(--accent-info-bg); border:1px solid var(--accent-primary); color:var(--accent-info-text); }
+    @keyframes toastIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+    .modal h3 { margin:0 0 10px; color:var(--text-primary); }
+    .modal .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .modal label { font-size:12px; color:var(--text-secondary); display:block; margin-bottom:6px; }
+    .modal input { width:100%; box-sizing:border-box; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:8px; padding:10px 12px; font-size:14px; }
+    .modal select { width:100%; box-sizing:border-box; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:8px; padding:10px 12px; font-size:14px; min-height:44px; }
+    .modal textarea { width:100%; box-sizing:border-box; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:8px; padding:10px 12px; font-size:14px; min-height:80px; resize:vertical; }
+    .modal .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .modal .btn { border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); padding:10px 14px; font-size:14px; min-height:44px; cursor:pointer; transition: background-color 0.2s; }
+    .modal .btn.primary { background:var(--accent-primary); border-color:var(--accent-primary); color:white; }
+    .modal .btn:hover { background:var(--bg-tertiary); }
+    .modal .btn.primary:hover { background:var(--accent-primary-hover); }
+    .modal .btn.danger { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger-text); }
+    .modal .btn.danger:hover { background:var(--accent-danger-bg); filter:brightness(0.96); }
+
+    .assign-layout { display:grid; gap:14px; padding-bottom:6px; }
+    .assign-section { border:1px solid var(--border-color); border-radius:12px; background:var(--bg-tertiary); padding:14px; }
+    .assign-section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .assign-section-title { font-size:15px; font-weight:700; color:var(--text-primary); }
+    .assign-section-copy { font-size:12px; color:var(--text-secondary); line-height:1.45; margin:4px 0 0; }
+    .assign-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+    .assign-chip-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .assign-chip { border-radius:999px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); padding:8px 12px; font-size:12px; cursor:pointer; min-height:36px; display:inline-flex; align-items:center; transition:all .15s; }
+    .assign-chip:hover { border-color:var(--accent-primary); color:var(--accent-primary); background:var(--accent-info-bg); }
+    .assign-chip.active { border-color:var(--accent-primary); background:var(--accent-primary); color:var(--accent-primary-contrast); }
+    .assign-chip.muted { cursor:default; color:var(--text-secondary); background:var(--bg-tertiary); }
+    .assign-chip.muted:hover { border-color:var(--border-color); color:var(--text-secondary); background:var(--bg-tertiary); }
+    .assign-inline-note { font-size:12px; color:var(--text-secondary); margin-top:10px; line-height:1.45; }
+    .assign-inline-status { display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:12px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); }
+    .assign-inline-status.info { display:block; border-color:var(--accent-primary); background:var(--accent-info-bg); color:var(--accent-info-text); }
+    .assign-inline-status.success { display:block; border-color:var(--accent-success); background:var(--accent-success-bg); color:var(--accent-success-text); }
+    .assign-inline-status.error { display:block; border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger-text); }
+    .assign-store-group { border:1px solid var(--border-color); border-radius:12px; background:var(--bg-secondary); padding:12px; }
+    .assign-store-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .assign-store-name { font-size:14px; font-weight:700; color:var(--text-primary); }
+    .assign-store-sub { font-size:12px; color:var(--text-secondary); margin-top:3px; }
+    .assign-count { font-size:12px; color:var(--text-secondary); border:1px solid var(--border-color); border-radius:999px; padding:6px 10px; background:var(--bg-tertiary); }
+    .assign-rule-list { display:grid; gap:10px; }
+    .assign-card { border:1px solid var(--border-color); border-radius:10px; padding:12px; background:var(--bg-tertiary); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .assign-card.editing { border-color:var(--accent-primary); box-shadow:0 0 0 1px rgba(37,99,235,0.18); }
+    .assign-card-title { font-size:14px; font-weight:700; color:var(--text-primary); }
+    .assign-card-meta { font-size:12px; color:var(--text-secondary); margin-top:4px; line-height:1.45; }
+    .assign-card-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .assign-empty { border:1px dashed var(--border-color); border-radius:12px; padding:18px; text-align:center; color:var(--text-secondary); background:var(--bg-secondary); font-size:13px; }
+    .assign-helper-list { margin:8px 0 0; padding-left:18px; color:var(--text-secondary); font-size:12px; line-height:1.55; }
+    .assign-helper-list li { margin:4px 0; }
+
+    .te-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:12px 0 0; padding:12px 14px; background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:10px; }
+    .te-toolbar .te-sep { width:1px; height:22px; background:var(--border-color); margin:0 4px; }
+    .te-toolbar label { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-secondary); cursor:pointer; white-space:nowrap; }
+    .te-toolbar label input[type="checkbox"] { width:20px; height:20px; accent-color:var(--accent-primary); cursor:pointer; }
+    .te-toolbar .te-preset-btn { font-size:13px; padding:8px 14px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .te-toolbar .te-preset-btn:hover { border-color:var(--accent-primary); color:var(--accent-primary); background:var(--accent-info-bg); }
+    .te-toolbar .te-preset-btn.active { border-color:var(--accent-primary); color:white; background:var(--accent-primary); }
+
+    .te-wrap { margin-top:12px; border:1px solid var(--border-color); border-radius:10px; overflow:hidden; background:var(--bg-secondary); position:relative; }
+    .te-scroll { overflow-x:auto; overflow-y:auto; max-height:52vh; -webkit-overflow-scrolling:touch; }
+    .te-table { width:100%; border-collapse:collapse; table-layout:auto; }
+
+    /* Header cells */
+    .te-table thead th { position:sticky; top:0; z-index:2; background:var(--bg-tertiary); border:1px solid var(--border-color); padding:0; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); font-weight:600; white-space:nowrap; vertical-align:top; min-width:120px; }
+    .te-th-inner { display:flex; flex-direction:column; gap:0; }
+    .te-th-top { display:flex; align-items:center; gap:0; padding:6px 5px 3px; }
+    .te-th-top .te-drag-col { cursor:grab; color:var(--text-secondary); font-size:18px; padding:4px 5px; flex-shrink:0; user-select:none; opacity:.6; transition:opacity .15s; touch-action:none; }
+    .te-th-top .te-drag-col:hover { opacity:1; }
+    .te-th-top .te-drag-col:active { cursor:grabbing; }
+    .te-th-input { flex:1; min-width:0; background:transparent; border:none; color:var(--text-primary); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; padding:6px; outline:none; }
+    .te-th-input:focus { background:var(--bg-secondary); border-radius:4px; box-shadow:0 0 0 2px var(--accent-primary); }
+    .te-th-input::placeholder { color:var(--text-muted); font-weight:400; }
+    .te-th-bottom { display:flex; align-items:center; gap:3px; padding:3px 5px 6px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .te-th-pill { font-size:11px; padding:4px 9px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; text-transform:none; letter-spacing:0; font-weight:500; transition:all .12s; white-space:nowrap; line-height:1.4; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+    .te-th-pill:hover { border-color:var(--accent-primary); color:var(--accent-primary); background:var(--bg-secondary); }
+    .te-th-pill.active { border-color:var(--accent-primary); background:var(--accent-primary); color:#fff; font-weight:600; }
+    [data-theme="dark"] .te-th-pill.active { background:var(--accent-primary); color:#fff; }
+    .te-th-numcfg { display:flex; gap:4px; padding:2px 5px 6px; align-items:center; }
+    .te-th-numcfg span { font-size:11px; color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:0; }
+    .te-th-numcfg input { width:52px; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:4px 6px; font-size:12px; text-align:center; outline:none; }
+    .te-th-numcfg input:focus { border-color:var(--accent-primary); }
+    .te-th-numcfg input::placeholder { color:var(--text-muted); }
+    .te-th-numcfg select { min-width:120px; background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:4px 6px; font-size:12px; outline:none; }
+    .te-th-del { font-size:16px; width:28px; height:28px; border-radius:50%; border:1px solid transparent; background:transparent; color:var(--text-muted); cursor:pointer; opacity:0; transition:all .15s; margin-left:auto; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .te-th-dup { font-size:13px; width:28px; height:28px; border-radius:50%; border:1px solid transparent; background:transparent; color:var(--text-muted); cursor:pointer; opacity:0; transition:all .15s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .te-table thead th:hover .te-th-del, .te-table thead th:hover .te-th-dup { opacity:1; }
+    .te-th-del:hover { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger); opacity:1!important; }
+    .te-th-dup:hover { border-color:var(--accent-primary); background:var(--accent-info-bg); color:var(--accent-primary); opacity:1!important; }
+
+    /* Add-column header cell */
+    .te-table thead th.te-add-col { min-width:52px; width:52px; text-align:center; cursor:pointer; background:var(--bg-secondary); border-style:dashed; transition:all .15s; -webkit-tap-highlight-color:transparent; }
+    .te-table thead th.te-add-col:hover { background:var(--accent-info-bg); border-color:var(--accent-primary); color:var(--accent-primary); }
+    .te-add-col-icon { font-size:22px; color:var(--text-muted); line-height:1; padding:12px 0; }
+    .te-table thead th.te-add-col:hover .te-add-col-icon { color:var(--accent-primary); }
+
+    /* Body cells */
+    .te-table tbody td { border:1px solid var(--border-color); padding:10px 12px; font-size:14px; color:var(--text-primary); white-space:nowrap; position:relative; }
+    .te-table tbody td.te-row-label { background:var(--bg-tertiary); font-weight:500; padding:0; position:relative; }
+    .te-row-label-inner { display:flex; align-items:center; gap:0; padding-right:66px; }
+    .te-row-label-inner .te-drag-row { cursor:grab; color:var(--text-secondary); font-size:18px; padding:8px 6px; flex-shrink:0; user-select:none; opacity:.5; transition:opacity .15s; touch-action:none; }
+    .te-row-label-inner .te-drag-row:hover { opacity:1; }
+    .te-row-label-inner .te-drag-row:active { cursor:grabbing; }
+    .te-row-label-input { flex:1; min-width:0; background:transparent; border:none; color:var(--text-primary); font-size:14px; font-weight:500; padding:10px 8px; outline:none; }
+    .te-row-label-input:focus { background:var(--bg-secondary); box-shadow:inset 0 0 0 2px var(--accent-primary); }
+    .te-row-label-input::placeholder { color:var(--text-muted); font-weight:400; }
+    .te-row-del { position:absolute; right:4px; top:50%; transform:translateY(-50%); font-size:16px; width:28px; height:28px; border-radius:50%; border:1px solid transparent; background:transparent; color:var(--text-muted); cursor:pointer; opacity:0; transition:all .15s; display:flex; align-items:center; justify-content:center; }
+    .te-row-dup { position:absolute; right:34px; top:50%; transform:translateY(-50%); font-size:13px; width:28px; height:28px; border-radius:50%; border:1px solid transparent; background:transparent; color:var(--text-muted); cursor:pointer; opacity:0; transition:all .15s; display:flex; align-items:center; justify-content:center; }
+    .te-table tbody tr:hover .te-row-del, .te-table tbody tr:hover .te-row-dup { opacity:1; }
+    .te-row-del:hover { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:var(--accent-danger); opacity:1!important; }
+    .te-row-dup:hover { border-color:var(--accent-primary); background:var(--accent-info-bg); color:var(--accent-primary); opacity:1!important; }
+
+    .te-cell-ph { color:var(--text-muted); font-size:13px; font-style:italic; user-select:none; }
+
+    /* Add-row */
+    .te-table tbody tr.te-add-row td { border-style:dashed; text-align:center; cursor:pointer; padding:10px; color:var(--text-secondary); font-size:14px; background:var(--bg-secondary); transition:all .15s; font-weight:500; -webkit-tap-highlight-color:transparent; }
+    .te-table tbody tr.te-add-row:hover td { background:var(--accent-info-bg); border-color:var(--accent-primary); color:var(--accent-primary); }
+
+    /* Drag states */
+    .te-table thead th.dragging { opacity:.35; }
+    .te-table tbody tr.dragging { opacity:.35; }
+    .te-table thead th.drag-over-left { box-shadow:inset 3px 0 0 var(--accent-primary); }
+    .te-table thead th.drag-over-right { box-shadow:inset -3px 0 0 var(--accent-primary); }
+    .te-table tbody tr.drag-over-top td { box-shadow:inset 0 3px 0 var(--accent-primary); }
+
+    /* Undo bar */
+    .te-undo-bar { display:flex; align-items:center; gap:10px; margin-top:10px; font-size:13px; color:var(--text-secondary); }
+    .te-undo-bar button { font-size:13px; padding:8px 14px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; transition:all .15s; min-height:38px; }
+    .te-undo-bar button:hover { border-color:var(--accent-primary); color:var(--accent-primary); }
+    .te-undo-bar button:disabled { opacity:.35; cursor:default; }
+    .te-undo-bar button:disabled:hover { border-color:var(--border-color); color:var(--text-secondary); }
+    .te-undo-bar .te-count { margin-left:auto; font-size:12px; color:var(--text-muted); }
+
+    /* Presets menu */
+    .te-presets-menu { position:absolute; z-index:20; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; box-shadow:var(--shadow-md); padding:6px; min-width:260px; max-height:320px; overflow-y:auto; }
+    .te-presets-menu button { display:block; width:100%; text-align:left; padding:12px 14px; border:none; background:transparent; color:var(--text-primary); font-size:13px; border-radius:8px; cursor:pointer; transition:background .1s; }
+    .te-presets-menu button:hover { background:var(--bg-tertiary); }
+    .te-presets-menu button small { display:block; color:var(--text-muted); font-size:11px; margin-top:3px; }
+    .te-th-bottom::-webkit-scrollbar { display:none; }
+    @media (max-width:860px){ #toolbox{width:280px;} .modal .grid{grid-template-columns:1fr;} .assign-grid{grid-template-columns:1fr;} }
+    @media (max-width:768px) {
+      .modal { max-height:94vh; border-radius:10px 10px 0 0; }
+      .modal-header { padding:12px 12px 0; }
+      .modal-body { padding:0 12px; }
+      .modal-footer { padding:10px 12px 14px; }
+      .modal-header h3 { font-size:16px; }
+      .te-toolbar { gap:8px; padding:10px 12px; }
+      .te-scroll { max-height:36vh; }
+      .modal .row { gap:8px; }
+      .modal .btn { flex:1; text-align:center; min-height:48px; font-size:15px; }
+      .modal-close { width:40px; height:40px; }
+      .te-presets-menu { min-width:220px; max-height:240px; }
+    }
+    @media (max-width:1100px){
+      body { flex-direction:column; height:auto; }
+      #toolbox { width:100%; border-right:none; border-bottom:1px solid var(--border-color); box-shadow:var(--shadow-md); position:sticky; top:0; z-index:6; display:flex; flex-wrap:wrap; gap:10px; }
+      #toolbox h1, #toolbox .sub { width:100%; }
+      #toolbox h2 { margin:10px 0 6px; width:100%; }
+      .toolbox-item { width:calc(50% - 8px); min-width:220px; }
+      #main { width:100%; }
+      #header { position:sticky; top:0; z-index:5; }
+      #header-right { width:100%; justify-content:flex-start; }
+      #canvas { padding:12px; }
+      #canvas-inner { min-height:360px; }
+    }
+
+    @media (max-width:720px){
+      .toolbox-item { width:100%; }
+      #header { align-items:flex-start; gap:8px; }
+      #header-left { width:100%; gap:10px; }
+      #header-right { width:100%; justify-content:flex-start; }
+      .block { flex-direction:column; align-items:flex-start; }
+      .block-actions { width:100%; justify-content:flex-start; }
+    }
+    /* Preview widgets inside blocks (builder preview mode) */
+    .pv {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      opacity: 0.95;
+    }
+    .pv input, .pv select, .pv textarea {
+      background:var(--bg-secondary);
+      border:1px solid var(--border-color);
+      color:var(--text-primary);
+      border-radius:8px;
+      padding:10px 12px;
+      font-size:14px;
+      min-height:44px;
+    }
+    .pv input { width: 180px; }
+    .pv textarea { width: min(520px, 100%); min-height: 96px; }
+    .pv .unit { color:var(--text-secondary); font-size:13px; margin-left:-6px; }
+    .pv-table { width:100%; overflow-x:auto; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); }
+    .pv-table table { width:100%; border-collapse:collapse; min-width:400px; }
+    .pv-table th, .pv-table td { border:1px solid var(--border-color); padding:8px 10px; font-size:12px; color:var(--text-primary); white-space:nowrap; }
+    .pv-table th { text-transform:uppercase; letter-spacing:.04em; background:var(--bg-tertiary); font-weight:600; color:var(--text-secondary); }
+    .pv-table th .pv-type { font-size:10px; font-weight:400; text-transform:none; letter-spacing:0; color:var(--text-muted); display:block; margin-top:2px; }
+    .pv-table td { background:var(--bg-secondary); color:var(--text-muted); font-style:italic; font-size:12px; }
+    .pv-table td.pv-rl { font-style:normal; font-weight:500; color:var(--text-primary); background:var(--bg-tertiary); }
+    .pv-table-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px; }
+    .pv-table-note { font-size:11px; color:var(--text-secondary); margin-bottom:6px; }
+    .pv-table-more { font-size:11px; color:var(--text-muted); text-align:center; padding:4px; }
+
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+  <script src="../shared/dialog.js"></script>
+</head>
+<!-- Body with toolbox and canvas layout -->
+<body>
+  <!-- Toolbox sidebar with draggable items -->
+  <div id="toolbox">
+    <h1>Admin • Logbook Builder</h1>
+    <p class="sub">Build templates like your Word logbooks (headings + tables).</p>
+
+    <!-- Layout elements -->
+    <h2>Layout</h2>
+    <div class="toolbox-item" draggable="true" data-type="heading"><span>Heading</span><span class="pill">title</span></div>
+    <div class="toolbox-item" draggable="true" data-type="week_commencing"><span>Week Commencing</span><span class="pill">date</span></div>
+    <div class="toolbox-item" draggable="true" data-type="signature"><span>Signature</span><span class="pill">line</span></div>
+    <div class="toolbox-item" draggable="true" data-type="table"><span>Table</span><span class="pill">grid</span></div>
+
+    <!-- Field elements -->
+    <h2>Fields</h2>
+    <div class="toolbox-item" draggable="true" data-type="section"><span>Section</span><span class="pill">group</span></div>
+    <div class="toolbox-item" draggable="true" data-type="temperature"><span>Temperature</span><span class="pill">°C</span></div>
+    <div class="toolbox-item" draggable="true" data-type="yes_no"><span>Yes / No</span><span class="pill">check</span></div>
+    <div class="toolbox-item" draggable="true" data-type="note"><span>Note</span><span class="pill">text</span></div>
+
+    <div class="hint">Tip: drop onto a <b>Section</b> to nest under it.</div>
+  </div>
+
+  <div id="main">
+    <div id="header">
+      <div id="header-left">
+        <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+        <div id="titles">
+          <strong id="tplName">Logbook</strong>
+          <small id="tplSub">Template editor</small>
+        </div>
+      </div>
+      <div id="header-right">
+        <span id="status" class="badge">Initialising…</span>
+        <button id="modeToggle"><span class="dot"></span><span class="lbl">Switch to Preview</span></button>
+        <button id="renameTemplateBtn" type="button" class="back-btn">Rename</button>
+        <button id="manageAssignmentsBtn" type="button" class="back-btn">Assignments</button>
+        <a id="backBtn" class="back-btn" href="templates.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Back
+        </a>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="canvas">
+      <div id="canvas-inner"></div>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
+          Table Editor
+        </h3>
+        <button id="modalCloseX" class="modal-close" title="Close">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid">
+          <div><label>Title</label><input id="tableTitle" placeholder="e.g. Fridge/Freezer Temperature Log" /></div>
+          <div><label>Note <span style="color:var(--text-muted)">(optional)</span></label><input id="tableNote" placeholder="e.g. Record AM and PM checks" /></div>
+        </div>
+        <div class="te-toolbar">
+          <label><input id="rowModePerDay" type="checkbox"> Auto rows Mon–Sun</label>
+          <label><input id="showDatesInRows" type="checkbox"> Show dates</label>
+          <span class="te-sep"></span>
+          <div style="position:relative;display:inline-block;"><button class="te-preset-btn" id="tePresetsBtn">+ Presets</button></div>
+        </div>
+        <div class="te-wrap"><div class="te-scroll"><table class="te-table" id="teTable"><thead><tr id="teHeadRow"></tr></thead><tbody id="teBody"></tbody></table></div></div>
+        <div class="te-undo-bar"><button id="teUndo" disabled title="Ctrl+Z">↩ Undo</button><button id="teRedo" disabled title="Ctrl+Y">↪ Redo</button><span class="te-count" id="teCount"></span></div>
+        <div id="modalToast" class="modal-toast"></div>
+      </div>
+      <div class="modal-footer"><div class="row"><button id="modalCancel" class="btn">Cancel</button><button id="modalSave" class="btn primary">Save table</button></div></div>
+    </div>
+  </div>
+
+  <!-- Block Settings Modal (for all non-table blocks) -->
+  <div id="settingsBackdrop" class="modal-backdrop">
+    <div class="modal" style="width:min(520px,94vw);">
+      <div class="modal-header">
+        <h3 id="settingsTitle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span id="settingsTitleText">Block Settings</span>
+        </h3>
+        <button id="settingsCloseX" class="modal-close" title="Close">&#x2715;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div id="settingsFields"></div>
+        <div id="settingsToast" class="modal-toast"></div>
+      </div>
+      <div class="modal-footer"><div class="row"><button id="settingsCancel" class="btn">Cancel</button><button id="settingsSave" class="btn primary">Save</button></div></div>
+    </div>
+  </div>
+
+  <div id="assignmentBackdrop" class="modal-backdrop">
+    <div class="modal" style="width:min(940px,94vw);">
+      <div class="modal-header">
+        <h3>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+          <span id="assignmentTitleText">Department Assignments</span>
+        </h3>
+        <button id="assignmentCloseX" class="modal-close" title="Close">&#x2715;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <div class="assign-layout">
+          <section class="assign-section">
+            <div class="assign-section-head">
+              <div>
+                <div class="assign-section-title">Template default department</div>
+                <div class="assign-section-copy">This is the builder's best guess for where this logbook belongs. It pre-fills new assignments and helps keep department names consistent.</div>
+              </div>
+            </div>
+            <div class="assign-grid">
+              <div>
+                <label for="assignmentDefaultDeptInput">Default department</label>
+                <input id="assignmentDefaultDeptInput" type="text" placeholder="e.g. Bakery, Cleaning, Fire Checks" />
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <div class="row">
+                  <button id="assignmentSaveDefaultBtn" class="btn primary" type="button">Save default</button>
+                  <button id="assignmentClearDefaultBtn" class="btn" type="button">Clear</button>
+                </div>
+              </div>
+            </div>
+            <div id="assignmentDefaultMeta" class="assign-inline-note">No default department saved yet.</div>
+            <div id="assignmentTemplateSuggestions" class="assign-chip-row"></div>
+          </section>
+
+          <section class="assign-section">
+            <div class="assign-section-head">
+              <div>
+                <div class="assign-section-title">Assign this template to a store</div>
+                <div class="assign-section-copy">Choose a store, then pick an existing department or type a new one. Matching names are reused automatically so you do not end up with duplicates like "Bakery", "bakery", and "Bakery ".</div>
+              </div>
+            </div>
+            <div class="assign-grid">
+              <div>
+                <label for="assignmentStoreSelect">Store</label>
+                <select id="assignmentStoreSelect"></select>
+              </div>
+              <div>
+                <label for="assignmentDepartmentInput">Department</label>
+                <input id="assignmentDepartmentInput" type="text" list="assignmentDepartmentList" placeholder="Pick existing or type a new department" />
+                <datalist id="assignmentDepartmentList"></datalist>
+              </div>
+            </div>
+            <div class="assign-inline-note">Suggestions already used for this template or the selected store:</div>
+            <div id="assignmentStoreSuggestions" class="assign-chip-row"></div>
+            <div class="row" style="margin-top:12px;">
+              <button id="assignmentSaveBtn" class="btn primary" type="button">Assign to store</button>
+              <button id="assignmentCancelEditBtn" class="btn" type="button" style="display:none;">Cancel edit</button>
+            </div>
+            <div id="assignmentStatus" class="assign-inline-status"></div>
+          </section>
+
+          <section class="assign-section">
+            <div class="assign-section-head">
+              <div>
+                <div class="assign-section-title">Current assignments</div>
+                <div class="assign-section-copy">Edit, move, or remove where this template appears. The department pills below can also be promoted to the template default with one click.</div>
+              </div>
+            </div>
+            <div id="assignmentList"></div>
+            <ul class="assign-helper-list">
+              <li>Editing an assignment moves this template to a new department for that store.</li>
+              <li>Removing an assignment stops the template appearing for that store and department.</li>
+              <li>Saving a new department also adds it to this template's department suggestions.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="row">
+          <button id="assignmentCloseBtn" class="btn" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from "../shared/logbook-app.js";
+    import { collection, doc, addDoc, getDocs, updateDoc, deleteDoc, query, orderBy, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { TEMPERATURE_MODE_PRESETS, buildAssignmentRuleId, normalizeDepartmentValue } from "../shared/logbook-runtime.js";
+    import { waitForPageGuard } from "../shared/page-guard.js";
+
+    await waitForPageGuard();
+    const params = new URLSearchParams(window.location.search);
+    let TEMPLATE_ID = params.get("templateId");
+    if (!TEMPLATE_ID) styledAlert("No templateId provided. Open from templates_home.html", "Missing Template");
+
+    const canvasInner = document.getElementById("canvas-inner");
+    const statusEl = document.getElementById("status");
+    const tplNameEl = document.getElementById("tplName");
+    const tplSubEl = document.getElementById("tplSub");
+    const modeToggle = document.getElementById("modeToggle");
+    const renameTemplateBtn = document.getElementById("renameTemplateBtn");
+    const manageAssignmentsBtn = document.getElementById("manageAssignmentsBtn");
+
+    let blocks = [];
+    let previewMode = false;
+    let templateState = {
+      name: "Logbook",
+      description: "",
+      defaultDepartment: "",
+      departmentHints: []
+    };
+    let assignmentStores = [];
+    let assignmentRules = [];
+    let knownDepartmentsByStore = new Map();
+    let knownDepartmentPool = [];
+    let editingAssignmentRuleId = "";
+    let assignmentStoreSelection = "";
+
+    let touchDrag = null;
+    let lastTouch = null;
+    let ghostEl = null;
+
+    function setStatus(msg, kind="info") {
+      statusEl.textContent = msg;
+      statusEl.classList.remove("success","error");
+      if (kind === "success") statusEl.classList.add("success");
+      if (kind === "error") statusEl.classList.add("error");
+    }
+
+    function cleanDepartmentText(value) {
+      return String(value || "").trim().replace(/\s+/g, " ");
+    }
+
+    function dedupeDepartmentNames(values = []) {
+      const seen = new Set();
+      const next = [];
+      values.forEach((value) => {
+        const name = cleanDepartmentText(value);
+        if (!name) return;
+        const key = name.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        next.push(name);
+      });
+      return next;
+    }
+
+    function canonicalDepartmentName(value, options = []) {
+      const cleaned = normalizeDepartmentValue(cleanDepartmentText(value), "General");
+      const lookup = new Map();
+      dedupeDepartmentNames(options).forEach((department) => {
+        lookup.set(department.toLowerCase(), department);
+      });
+      return lookup.get(cleaned.toLowerCase()) || cleaned;
+    }
+
+    function sortStoresForUi(items = []) {
+      return [...items].sort((a, b) => {
+        const nameA = String(a.name || a.id || "").toLowerCase();
+        const nameB = String(b.name || b.id || "").toLowerCase();
+        if (nameA !== nameB) return nameA.localeCompare(nameB);
+        return String(a.id || "").localeCompare(String(b.id || ""));
+      });
+    }
+
+    function updateAssignmentsButtonLabel() {
+      if (!manageAssignmentsBtn) return;
+      manageAssignmentsBtn.textContent = assignmentRules.length
+        ? `Assignments (${assignmentRules.length})`
+        : "Assignments";
+    }
+
+    function applyTemplateState(data = {}) {
+      templateState = {
+        name: normalizeTemplateName(data.name, "Logbook"),
+        description: String(data.description || "").trim(),
+        defaultDepartment: cleanDepartmentText(data.defaultDepartment),
+        departmentHints: dedupeDepartmentNames(Array.isArray(data.departmentHints) ? data.departmentHints : [])
+      };
+      updateAssignmentsButtonLabel();
+    }
+
+    async function saveTemplateStatePatch(patch, { showStatus = true } = {}) {
+      if (!TEMPLATE_ID) return;
+      const payload = {};
+      if (Object.prototype.hasOwnProperty.call(patch, "defaultDepartment")) {
+        payload.defaultDepartment = cleanDepartmentText(patch.defaultDepartment) || null;
+      }
+      if (Object.prototype.hasOwnProperty.call(patch, "departmentHints")) {
+        payload.departmentHints = dedupeDepartmentNames(patch.departmentHints);
+      }
+      await setDoc(doc(db, "logbook_templates", TEMPLATE_ID), payload, { merge: true });
+      applyTemplateState({ ...templateState, ...payload, name: templateState.name, description: templateState.description });
+      if (showStatus) setStatus("Template assignment details updated", "success");
+    }
+
+    function normalizeTemplateName(value, fallback = "Logbook") {
+      const name = String(value || "").trim();
+      return name || fallback;
+    }
+
+    async function saveTemplateName(name, { showStatus = true } = {}) {
+      if (!TEMPLATE_ID) return;
+      const nextName = normalizeTemplateName(name);
+      await setDoc(doc(db, "logbook_templates", TEMPLATE_ID), { name: nextName }, { merge: true });
+      tplNameEl.textContent = nextName;
+      templateState.name = nextName;
+      if (showStatus) setStatus("Template name updated", "success");
+    }
+
+    function defaultLabel(type) {
+      return {
+        heading: "LOGBOOK TITLE",
+        week_commencing: "Week Commencing",
+        signature: "Manager signature",
+        table: "Table",
+        section: "New Section",
+        temperature: "Temperature",
+        yes_no: "Yes / No",
+        note: "Notes"
+      }[type] || "Field";
+    }
+
+    function defaultConfig(type) {
+      if (type === "week_commencing") return { auto_from_entry_date: true };
+      if (type === "signature") return { role: "Manager" };
+      if (type === "heading") return { level: 1 };
+      if (type === "temperature") return { temperature_mode: "custom", min: null, max: null };
+      if (type === "note") return { max_length: null, placeholder: "", monitor_when_filled: true };
+      if (type === "table") {
+        return {
+          title: "New Table",
+          note: "",
+          columns: [
+            { key:"item", label:"Item", input:"text" },
+            { key:"mon", label:"Mon", input:"yn" },
+            { key:"tue", label:"Tue", input:"yn" },
+            { key:"wed", label:"Wed", input:"yn" },
+            { key:"thu", label:"Thu", input:"yn" },
+            { key:"fri", label:"Fri", input:"yn" },
+            { key:"sat", label:"Sat", input:"yn" },
+            { key:"sun", label:"Sun", input:"yn" }
+          ],
+          rows: [
+            { id:"row1", label:"Example row 1" },
+            { id:"row2", label:"Example row 2" }
+          ]
+        };
+      }
+      return {};
+    }
+
+    const TEMPERATURE_MODE_OPTIONS = Object.entries(TEMPERATURE_MODE_PRESETS).map(([value, preset]) => ({
+      value,
+      label: preset.label
+    }));
+
+    function getTemperatureModeLabel(mode) {
+      const key = String(mode || "custom").trim().toLowerCase() || "custom";
+      return TEMPERATURE_MODE_PRESETS[key]?.label || TEMPERATURE_MODE_PRESETS.custom.label;
+    }
+
+    function buildTemperatureModeSelectHtml(selectedMode = "custom", id = "") {
+      const attrs = id ? ` id="${id}"` : "";
+      const options = TEMPERATURE_MODE_OPTIONS.map((item) => {
+        const selected = item.value === selectedMode ? " selected" : "";
+        return `<option value="${item.value}"${selected}>${item.label}</option>`;
+      }).join("");
+      return `<select${attrs}>${options}</select>`;
+    }
+
+    modeToggle.addEventListener("click", () => {
+      previewMode = !previewMode;
+      modeToggle.classList.toggle("preview", previewMode);
+      modeToggle.querySelector(".lbl").textContent = previewMode ? "Switch to Builder" : "Switch to Preview";
+      setStatus(previewMode ? "Preview mode – dragging disabled" : "Builder mode – drag to build", "info");
+      renderBlocks();
+    });
+
+    if (renameTemplateBtn) {
+      renameTemplateBtn.addEventListener("click", async () => {
+        const currentName = normalizeTemplateName(tplNameEl.textContent, "Logbook");
+        const newName = await styledPrompt(
+          "Enter a name for this logbook:",
+          currentName,
+          "Rename Logbook",
+          { placeholder: "e.g. Fire Checks", icon: "✏️", confirmText: "Save" }
+        );
+        if (!newName || !newName.trim()) return;
+        try {
+          await saveTemplateName(newName);
+        } catch (e) {
+          console.error(e);
+          setStatus("Rename failed", "error");
+        }
+      });
+    }
+
+    async function ensureTemplateExists() {
+      if (!TEMPLATE_ID) return;
+      try {
+        const ref = doc(db, "logbook_templates", TEMPLATE_ID);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          await setDoc(ref, { name:"New Logbook", created_at: new Date().toISOString(), departmentHints: [] });
+          tplNameEl.textContent = "New Logbook";
+          tplSubEl.textContent = `ID: ${TEMPLATE_ID}`;
+          applyTemplateState({ name: "New Logbook", description: "", defaultDepartment: "", departmentHints: [] });
+        } else {
+          const data = snap.data();
+          tplNameEl.textContent = normalizeTemplateName(data.name);
+          tplSubEl.textContent = data.description || `ID: ${TEMPLATE_ID}`;
+          applyTemplateState(data);
+        }
+      } catch (e) {
+        console.error(e);
+        setStatus("Error loading template", "error");
+      }
+    }
+
+    async function loadBlocks() {
+      if (!TEMPLATE_ID) return;
+      setStatus("Loading blocks…", "info");
+      try {
+        const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+        const snap = await getDocs(query(colRef, orderBy("sort_index")));
+        blocks = [];
+        snap.forEach(d => blocks.push({ block_id:d.id, ...d.data() }));
+        renderBlocks();
+        setStatus(`Loaded ${blocks.length} block(s)`, "success");
+      } catch (e) {
+        console.error(e);
+        setStatus("Error loading blocks", "error");
+      }
+    }
+
+    function createGhost(label, type) {
+      removeGhost();
+      const g = document.createElement("div");
+      g.className = "drag-ghost";
+      const labelEl = document.createElement("span");
+      labelEl.textContent = label;
+      const typeEl = document.createElement("span");
+      typeEl.className = "type-pill";
+      typeEl.textContent = type;
+      g.appendChild(labelEl);
+      g.appendChild(typeEl);
+      document.body.appendChild(g);
+      ghostEl = g;
+    }
+    function moveGhost(x,y){ if(ghostEl){ ghostEl.style.left=x+"px"; ghostEl.style.top=y+"px"; } }
+    function removeGhost(){ if(ghostEl?.parentNode){ ghostEl.parentNode.removeChild(ghostEl); } ghostEl=null; }
+
+    function getDropIndex(e) {
+      // Get ALL draggable items (blocks + section-wraps) regardless of nesting
+      const els = [...canvasInner.querySelectorAll(".block, .section-wrap")];
+      if (els.length === 0) return 0;
+      const y = e.clientY;
+      for (let i = 0; i < els.length; i++) {
+        // Skip blocks that are inside a section-wrap (they are children)
+        // but still use them for index calculation
+        const r = els[i].getBoundingClientRect();
+        if (y < r.top + r.height / 2) {
+          // Map DOM position back to block array index
+          const id = els[i].dataset.id;
+          const blockIdx = blocks.findIndex(b => b.block_id === id);
+          return blockIdx >= 0 ? blockIdx : i;
+        }
+      }
+      return blocks.length;
+    }
+    function getDropParentId(e) {
+      const el = e.target.closest ? e.target : null;
+      if (!el) return null;
+
+      // If dropped inside a .section-children area, parent is that section
+      const childrenWrap = el.closest ? el.closest(".section-children") : null;
+      if (childrenWrap) {
+        const sectionWrap = childrenWrap.closest(".section-wrap");
+        return sectionWrap ? sectionWrap.dataset.id : null;
+      }
+
+      // If dropped on a section-wrap itself (e.g. header area), check position
+      const sectionWrap = el.closest ? el.closest(".section-wrap") : null;
+      if (sectionWrap) {
+        const rect = sectionWrap.getBoundingClientRect();
+        const relY = e.clientY - rect.top;
+        if (relY > 40) return sectionWrap.dataset.id;
+      }
+
+      return null;
+    }
+
+    function renderBlocks() {
+      canvasInner.innerHTML = "";
+      if (blocks.length === 0) {
+        const d = document.createElement("div");
+        d.className = "empty";
+        d.textContent = "Drag blocks from the left to build a template. Use Table blocks to match your Word logbooks.";
+        canvasInner.appendChild(d);
+        return;
+      }
+
+      const collapsed = {};
+      blocks.forEach(b => collapsed[b.block_id] = !!(b.config && b.config.collapsed));
+
+      // Group: sections contain children
+      const sectionIds = new Set(blocks.filter(b => b.type === "section").map(b => b.block_id));
+
+      blocks.forEach(b => {
+        // Skip children of collapsed sections
+        if (b.parent_block_id && collapsed[b.parent_block_id]) return;
+        // Skip children here — they'll be rendered inside their section wrapper
+        if (b.parent_block_id && sectionIds.has(b.parent_block_id)) return;
+
+        if (b.type === "section") {
+          const cfg = b.config || {};
+          const sectionWrap = document.createElement("div");
+          sectionWrap.className = "section-wrap";
+          sectionWrap.dataset.id = b.block_id;
+          sectionWrap.dataset.type = "section";
+          sectionWrap.draggable = !previewMode;
+
+          // Section header
+          const head = document.createElement("div");
+          head.className = "section-head";
+
+          const label = document.createElement("div");
+          label.className = "block-label";
+          label.textContent = b.label || defaultLabel(b.type);
+          head.appendChild(label);
+
+          const typePill = document.createElement("div");
+          typePill.className = "block-type";
+          typePill.textContent = "section";
+          head.appendChild(typePill);
+
+          if (!previewMode) {
+            const actions = document.createElement("div");
+            actions.className = "block-actions";
+
+            const toggle = document.createElement("button");
+            toggle.className = "action";
+            toggle.textContent = cfg.collapsed ? "▸ Expand" : "▾ Collapse";
+            toggle.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              await updateBlockConfig(b.block_id, { collapsed: !cfg.collapsed });
+              await loadBlocks();
+            });
+            actions.appendChild(toggle);
+
+            const settings = document.createElement("button");
+            settings.className = "action";
+            settings.textContent = "⚙";
+            settings.addEventListener("click", async (e) => { e.stopPropagation(); await openSettings(b); });
+            actions.appendChild(settings);
+
+            const dup = document.createElement("button");
+            dup.className = "action";
+            dup.textContent = "⧉";
+            dup.addEventListener("click", (e) => { e.stopPropagation(); duplicateBlock(b.block_id); });
+            actions.appendChild(dup);
+
+            const del = document.createElement("button");
+            del.className = "action";
+            del.textContent = "🗑";
+            del.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              const ok = await styledConfirm("Delete this section and all its children?", "Delete Section", { danger: true, confirmText: "Delete", icon: "🗑️" });
+              if (ok) deleteBlock(b.block_id);
+            });
+            actions.appendChild(del);
+
+            head.appendChild(actions);
+          }
+          sectionWrap.appendChild(head);
+
+          // Children container
+          if (!cfg.collapsed) {
+            const childrenWrap = document.createElement("div");
+            childrenWrap.className = "section-children";
+
+            const children = blocks.filter(c => c.parent_block_id === b.block_id);
+            if (children.length === 0 && !previewMode) {
+              const empty = document.createElement("div");
+              empty.className = "empty-section";
+              empty.textContent = "Drag blocks here to add them to this section";
+              childrenWrap.appendChild(empty);
+            }
+            children.forEach(child => {
+              childrenWrap.appendChild(renderSingleBlock(child));
+            });
+            sectionWrap.appendChild(childrenWrap);
+          }
+
+          canvasInner.appendChild(sectionWrap);
+          return;
+        }
+
+        // Non-section, non-child block
+        canvasInner.appendChild(renderSingleBlock(b));
+      });
+    }
+
+    function renderSingleBlock(b) {
+        const cfg = b.config || {};
+        const div = document.createElement("div");
+        div.className = "block";
+        div.dataset.id = b.block_id;
+        div.dataset.type = b.type;
+        div.draggable = !previewMode;
+
+        const inner = document.createElement("div");
+        inner.className = "block-inner";
+
+        const label = document.createElement("div");
+        label.className = "block-label";
+        label.textContent = b.label || defaultLabel(b.type);
+        inner.appendChild(label);
+
+        const typePill = document.createElement("div");
+        typePill.className = "block-type";
+        typePill.textContent = b.type;
+        inner.appendChild(typePill);
+
+        if (b.type === "heading") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = `Heading level: ${cfg.level || 1}`;
+          inner.appendChild(hint);
+        }
+        if (b.type === "table") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          const cols = Array.isArray(cfg.columns) ? cfg.columns.length : 0;
+          const rows = Array.isArray(cfg.rows) ? cfg.rows.length : 0;
+          hint.textContent = `${cfg.title || "Table"} · ${cols} col · ${rows} rows`;
+          inner.appendChild(hint);
+        }
+        if (b.type === "week_commencing") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "Auto-filled from entry date on Fill & PDF page";
+          inner.appendChild(hint);
+        }
+        if (b.type === "temperature") {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = `Mode: ${getTemperatureModeLabel(cfg.temperature_mode)}`;
+          inner.appendChild(hint);
+        }
+        if (b.type === "note" && cfg.monitor_when_filled !== false) {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "Filled notes will appear in Today Monitoring";
+          inner.appendChild(hint);
+        }
+
+        div.appendChild(inner);
+
+        // Preview mode
+        if (previewMode) {
+          const pv = document.createElement("div");
+          pv.className = "pv";
+
+          if (b.type === "temperature") {
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.placeholder = TEMPERATURE_MODE_PRESETS[String(cfg.temperature_mode || "custom").trim().toLowerCase()]?.placeholder || "°C";
+            inp.placeholder = "°C";
+            inp.disabled = true;
+            pv.appendChild(inp);
+            const u = document.createElement("span");
+            u.className = "unit";
+            u.textContent = "°C";
+            pv.appendChild(u);
+          } else if (b.type === "yes_no") {
+            const sel = document.createElement("select");
+            sel.disabled = true;
+            sel.innerHTML = `<option value="">Select…</option><option>Yes</option><option>No</option>`;
+            pv.appendChild(sel);
+          } else if (b.type === "note") {
+            const ta = document.createElement("textarea");
+            ta.placeholder = "Notes…";
+            ta.disabled = true;
+            pv.appendChild(ta);
+          } else if (b.type === "week_commencing") {
+            const inp = document.createElement("input");
+            inp.type = "date";
+            inp.disabled = true;
+            pv.appendChild(inp);
+          } else if (b.type === "signature") {
+            const line = document.createElement("div");
+            line.style.flex = "1";
+            line.style.minWidth = "220px";
+            line.style.height = "28px";
+            line.style.borderBottom = "2px solid var(--text-muted)";
+            pv.appendChild(line);
+          } else if (b.type === "table") {
+            const tcfg = b.config || {};
+            const cols = Array.isArray(tcfg.columns) ? tcfg.columns : [];
+            const rows = Array.isArray(tcfg.rows) ? tcfg.rows : [];
+            const isPerDay = tcfg.row_mode === "per_day";
+            const displayRows = isPerDay
+              ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d,i) => ({id:"day"+i,label:d}))
+              : rows;
+
+            if (tcfg.title) {
+              const titleDiv = document.createElement("div");
+              titleDiv.className = "pv-table-title";
+              titleDiv.textContent = tcfg.title;
+              pv.appendChild(titleDiv);
+            }
+            if (tcfg.note) {
+              const noteDiv = document.createElement("div");
+              noteDiv.className = "pv-table-note";
+              noteDiv.textContent = tcfg.note;
+              pv.appendChild(noteDiv);
+            }
+
+            const shell = document.createElement("div");
+            shell.className = "pv-table";
+
+            const t = document.createElement("table");
+            const thead = document.createElement("thead");
+            const trh = document.createElement("tr");
+            const typeLabels = { rowLabel:"Label", text:"Text", yn:"Yes/No", checkbox:"Tick", tickcross:"✓ / ✗", number:"Number", signature:"Sig", initials:"Initials", time:"Time", date:"Date" };
+            const maxCols = 8;
+            const showCols = cols.length ? cols.slice(0, maxCols) : [{label:"Col 1",input:"text"},{label:"Col 2",input:"text"}];
+            showCols.forEach(c => {
+              const th = document.createElement("th");
+              th.innerHTML = (c.label || c.key || "Col");
+              const typeSpan = document.createElement("span");
+              typeSpan.className = "pv-type";
+              typeSpan.textContent = typeLabels[c.input] || c.input || "Text";
+              if (c.input === "number" && (c.min != null || c.max != null)) {
+                typeSpan.textContent += " (" + (c.min ?? "?") + "–" + (c.max ?? "?") + ")";
+              }
+              th.appendChild(typeSpan);
+              trh.appendChild(th);
+            });
+            if (cols.length > maxCols) {
+              const th = document.createElement("th");
+              th.textContent = "+" + (cols.length - maxCols) + " more";
+              th.style.fontSize = "10px";
+              th.style.fontWeight = "400";
+              trh.appendChild(th);
+            }
+            thead.appendChild(trh);
+            t.appendChild(thead);
+
+            const tbody = document.createElement("tbody");
+            const maxRows = 4;
+            const showRows = displayRows.length ? displayRows.slice(0, maxRows) : [{id:"r1",label:""},{id:"r2",label:""}];
+            const phMap = { yn:"Y / N", checkbox:"☑", tickcross:"✓ / ✗", number:"0.0", signature:"Sig ___", initials:"AB", time:"00:00", date:"dd/mm", text:"···" };
+            showRows.forEach(r => {
+              const tr = document.createElement("tr");
+              showCols.forEach(c => {
+                const td = document.createElement("td");
+                if (c.input === "rowLabel") {
+                  td.className = "pv-rl";
+                  td.textContent = r.label || "—";
+                } else {
+                  td.textContent = phMap[c.input] || "···";
+                }
+                tr.appendChild(td);
+              });
+              if (cols.length > maxCols) {
+                const td = document.createElement("td");
+                td.textContent = "";
+                tr.appendChild(td);
+              }
+              tbody.appendChild(tr);
+            });
+            t.appendChild(tbody);
+            shell.appendChild(t);
+
+            if (displayRows.length > maxRows) {
+              const more = document.createElement("div");
+              more.className = "pv-table-more";
+              more.textContent = "+" + (displayRows.length - maxRows) + " more row" + (displayRows.length - maxRows !== 1 ? "s" : "");
+              shell.appendChild(more);
+            }
+
+            pv.appendChild(shell);
+          }
+          if (pv.childNodes.length > 0) {
+            inner.appendChild(pv);
+          }
+        }
+
+        if (!previewMode) {
+          const actions = document.createElement("div");
+          actions.className = "block-actions";
+
+
+
+          const settings = document.createElement("button");
+          settings.className = "action";
+          settings.textContent = "⚙";
+          settings.addEventListener("click", async (e) => { e.stopPropagation(); await openSettings(b); });
+          actions.appendChild(settings);
+
+          const dup = document.createElement("button");
+          dup.className = "action";
+          dup.textContent = "⧉";
+          dup.addEventListener("click", (e) => { e.stopPropagation(); duplicateBlock(b.block_id); });
+          actions.appendChild(dup);
+
+          const del = document.createElement("button");
+          del.className = "action";
+          del.textContent = "🗑";
+          del.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const msg = b.type === "section"
+              ? "Delete this section and all its children?"
+              : "Delete this block?";
+            const ok = await styledConfirm(msg, "Delete Block", { danger: true, confirmText: "Delete", icon: "🗑️" });
+            if (ok) deleteBlock(b.block_id);
+          });
+          actions.appendChild(del);
+
+          div.appendChild(actions);
+        }
+
+        return div;
+    }
+
+    async function updateBlockConfig(id, patch) {
+      const ref = doc(db, "logbook_templates", TEMPLATE_ID, "blocks", id);
+      const block = blocks.find(x => x.block_id === id);
+      const cfg = { ...(block?.config||{}), ...patch };
+      await updateDoc(ref, { config: cfg });
+    }
+
+    async function openSettings(block) {
+      if (block.type === "table") {
+        openTableModal(block);
+        return;
+      }
+      if (block.type === "section") {
+        // Section only has label (via Edit) and Collapse — open a label-only settings modal
+        openBlockSettings(block);
+        return;
+      }
+      openBlockSettings(block);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BLOCK SETTINGS MODAL — styled settings for all non-table blocks
+       ═══════════════════════════════════════════════════════════ */
+    const settingsBackdrop = document.getElementById("settingsBackdrop");
+    const settingsCloseX = document.getElementById("settingsCloseX");
+    const settingsTitleText = document.getElementById("settingsTitleText");
+    const settingsFields = document.getElementById("settingsFields");
+    const settingsToast = document.getElementById("settingsToast");
+    const settingsCancel = document.getElementById("settingsCancel");
+    const settingsSave = document.getElementById("settingsSave");
+    let settingsBlockId = null;
+    let settingsBlockType = null;
+
+    const assignmentBackdrop = document.getElementById("assignmentBackdrop");
+    const assignmentTitleText = document.getElementById("assignmentTitleText");
+    const assignmentCloseX = document.getElementById("assignmentCloseX");
+    const assignmentCloseBtn = document.getElementById("assignmentCloseBtn");
+    const assignmentDefaultDeptInput = document.getElementById("assignmentDefaultDeptInput");
+    const assignmentSaveDefaultBtn = document.getElementById("assignmentSaveDefaultBtn");
+    const assignmentClearDefaultBtn = document.getElementById("assignmentClearDefaultBtn");
+    const assignmentDefaultMeta = document.getElementById("assignmentDefaultMeta");
+    const assignmentTemplateSuggestions = document.getElementById("assignmentTemplateSuggestions");
+    const assignmentStoreSelect = document.getElementById("assignmentStoreSelect");
+    const assignmentDepartmentInput = document.getElementById("assignmentDepartmentInput");
+    const assignmentDepartmentList = document.getElementById("assignmentDepartmentList");
+    const assignmentStoreSuggestions = document.getElementById("assignmentStoreSuggestions");
+    const assignmentSaveBtn = document.getElementById("assignmentSaveBtn");
+    const assignmentCancelEditBtn = document.getElementById("assignmentCancelEditBtn");
+    const assignmentStatus = document.getElementById("assignmentStatus");
+    const assignmentList = document.getElementById("assignmentList");
+
+    function setAssignmentStatus(message = "", kind = "") {
+      if (!assignmentStatus) return;
+      assignmentStatus.textContent = message;
+      assignmentStatus.className = "assign-inline-status";
+      if (!message) return;
+      assignmentStatus.classList.add(kind || "info");
+    }
+
+    function getStoreName(storeId) {
+      return assignmentStores.find((store) => store.id === storeId)?.name || storeId || "Unknown store";
+    }
+
+    function getTemplateDepartmentSuggestions() {
+      return dedupeDepartmentNames([
+        templateState.defaultDepartment,
+        ...templateState.departmentHints,
+        ...assignmentRules.map((rule) => rule.department),
+        "General"
+      ]);
+    }
+
+    function getStoreDepartmentSuggestions(storeId) {
+      const nextStoreId = String(storeId || "").trim();
+      return dedupeDepartmentNames([
+        ...(knownDepartmentsByStore.get(nextStoreId) || []),
+        ...assignmentRules.filter((rule) => rule.storeId === nextStoreId).map((rule) => rule.department)
+      ]);
+    }
+
+    function getCombinedDepartmentSuggestions(storeId) {
+      return dedupeDepartmentNames([
+        ...getStoreDepartmentSuggestions(storeId),
+        ...getTemplateDepartmentSuggestions(),
+        ...knownDepartmentPool
+      ]);
+    }
+
+    function setAssignmentEditor(rule = null) {
+      editingAssignmentRuleId = rule?.id || "";
+      if (rule) {
+        assignmentStoreSelection = rule.storeId;
+        if (assignmentStoreSelect) assignmentStoreSelect.value = rule.storeId;
+        if (assignmentDepartmentInput) assignmentDepartmentInput.value = rule.department;
+        if (assignmentSaveBtn) assignmentSaveBtn.textContent = "Save assignment";
+        if (assignmentCancelEditBtn) assignmentCancelEditBtn.style.display = "";
+        setAssignmentStatus(`Editing ${rule.department} for ${getStoreName(rule.storeId)}.`, "info");
+      } else {
+        editingAssignmentRuleId = "";
+        if (!assignmentStoreSelection && assignmentStoreSelect?.value) {
+          assignmentStoreSelection = assignmentStoreSelect.value;
+        }
+        if (assignmentSaveBtn) assignmentSaveBtn.textContent = "Assign to store";
+        if (assignmentCancelEditBtn) assignmentCancelEditBtn.style.display = "none";
+        if (assignmentDepartmentInput) {
+          assignmentDepartmentInput.value = templateState.defaultDepartment || assignmentDepartmentInput.value || "";
+        }
+      }
+      renderAssignmentModal();
+    }
+
+    async function loadAssignmentWorkspace({ silent = false } = {}) {
+      if (!TEMPLATE_ID) return;
+      if (!silent) setAssignmentStatus("Loading assignments...", "info");
+      try {
+        const [storesSnap, rulesSnap] = await Promise.all([
+          getDocs(collection(db, "stores")),
+          getDocs(collection(db, "store_template_rules"))
+        ]);
+
+        assignmentStores = sortStoresForUi(storesSnap.docs.map((row) => ({
+          id: row.id,
+          ...(row.data() || {})
+        })));
+
+        const allRules = rulesSnap.docs.map((row) => {
+          const data = row.data() || {};
+          return {
+            id: row.id,
+            storeId: String(data.storeId || "").trim(),
+            department: normalizeDepartmentValue(cleanDepartmentText(data.department), "General"),
+            templateId: String(data.templateId || "").trim(),
+            frequency: String(data.frequency || "daily").trim() || "daily"
+          };
+        }).filter((rule) => rule.storeId && rule.templateId);
+
+        const nextKnownByStore = new Map();
+        allRules.forEach((rule) => {
+          const current = nextKnownByStore.get(rule.storeId) || [];
+          current.push(rule.department);
+          nextKnownByStore.set(rule.storeId, current);
+        });
+        knownDepartmentsByStore = new Map(
+          [...nextKnownByStore.entries()].map(([storeId, departments]) => [storeId, dedupeDepartmentNames(departments)])
+        );
+        knownDepartmentPool = dedupeDepartmentNames(allRules.map((rule) => rule.department));
+
+        assignmentRules = allRules
+          .filter((rule) => rule.templateId === TEMPLATE_ID)
+          .sort((a, b) => {
+            const storeCompare = getStoreName(a.storeId).localeCompare(getStoreName(b.storeId), "en", { sensitivity: "base" });
+            if (storeCompare !== 0) return storeCompare;
+            return a.department.localeCompare(b.department, "en", { sensitivity: "base" });
+          });
+
+        if (!assignmentStoreSelection || !assignmentStores.some((store) => store.id === assignmentStoreSelection)) {
+          assignmentStoreSelection = assignmentRules[0]?.storeId || assignmentStores[0]?.id || "";
+        }
+
+        if (!silent) {
+          setAssignmentStatus(
+            assignmentRules.length
+              ? `${assignmentRules.length} assignment${assignmentRules.length === 1 ? "" : "s"} loaded.`
+              : "No assignments yet for this template.",
+            "info"
+          );
+        }
+        updateAssignmentsButtonLabel();
+        renderAssignmentModal();
+      } catch (error) {
+        console.error(error);
+        setAssignmentStatus("Failed to load stores and assignments.", "error");
+      }
+    }
+
+    function renderDepartmentChipRow(container, departments, action, activeValue = "", emptyText = "No suggestions yet.") {
+      if (!container) return;
+      const nextDepartments = dedupeDepartmentNames(departments);
+      if (!nextDepartments.length) {
+        container.innerHTML = `<span class="assign-chip muted">${escAttr(emptyText)}</span>`;
+        return;
+      }
+      const activeKey = cleanDepartmentText(activeValue).toLowerCase();
+      container.innerHTML = nextDepartments.map((department) => {
+        const activeClass = department.toLowerCase() === activeKey ? " active" : "";
+        return `<button class="assign-chip${activeClass}" type="button" data-action="${action}" data-department="${escAttr(department)}">${escAttr(department)}</button>`;
+      }).join("");
+    }
+
+    function renderAssignmentList() {
+      if (!assignmentList) return;
+      if (!assignmentRules.length) {
+        assignmentList.innerHTML = `<div class="assign-empty">This template is not assigned anywhere yet. Pick a store and department above to create the first assignment.</div>`;
+        return;
+      }
+
+      const grouped = new Map();
+      assignmentRules.forEach((rule) => {
+        const current = grouped.get(rule.storeId) || [];
+        current.push(rule);
+        grouped.set(rule.storeId, current);
+      });
+
+      const storeIds = [...grouped.keys()].sort((a, b) => getStoreName(a).localeCompare(getStoreName(b), "en", { sensitivity: "base" }));
+      assignmentList.innerHTML = storeIds.map((storeId) => {
+        const rules = (grouped.get(storeId) || []).sort((a, b) => a.department.localeCompare(b.department, "en", { sensitivity: "base" }));
+        return `
+          <div class="assign-store-group">
+            <div class="assign-store-head">
+              <div>
+                <div class="assign-store-name">${escAttr(getStoreName(storeId))}</div>
+                <div class="assign-store-sub">${escAttr(storeId)}</div>
+              </div>
+              <div class="assign-count">${rules.length} assignment${rules.length === 1 ? "" : "s"}</div>
+            </div>
+            <div class="assign-rule-list">
+              ${rules.map((rule) => `
+                <article class="assign-card${editingAssignmentRuleId === rule.id ? " editing" : ""}">
+                  <div>
+                    <div class="assign-card-title">${escAttr(rule.department)}</div>
+                    <div class="assign-card-meta">Frequency: ${escAttr(rule.frequency || "daily")}<br>Rule ID: ${escAttr(rule.id)}</div>
+                  </div>
+                  <div class="assign-card-actions">
+                    <button class="btn" type="button" data-action="edit-assignment" data-rule-id="${escAttr(rule.id)}">Edit</button>
+                    <button class="btn" type="button" data-action="make-default" data-department="${escAttr(rule.department)}">Make default</button>
+                    <button class="btn danger" type="button" data-action="remove-assignment" data-rule-id="${escAttr(rule.id)}">Remove</button>
+                  </div>
+                </article>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderAssignmentModal() {
+      if (!assignmentBackdrop) return;
+      const savedDefaultDepartment = cleanDepartmentText(templateState.defaultDepartment || "");
+      const currentDefaultDraft = cleanDepartmentText(assignmentDefaultDeptInput?.value || "");
+
+      if (assignmentTitleText) {
+        assignmentTitleText.textContent = `Department Assignments - ${templateState.name || "Logbook"}`;
+      }
+
+      if (assignmentDefaultDeptInput) {
+        if (!currentDefaultDraft || currentDefaultDraft.toLowerCase() === savedDefaultDepartment.toLowerCase()) {
+          assignmentDefaultDeptInput.value = templateState.defaultDepartment || "";
+        }
+      }
+
+      if (assignmentDefaultMeta) {
+        assignmentDefaultMeta.textContent = templateState.defaultDepartment
+          ? `Current default: ${templateState.defaultDepartment}. New assignments will use this unless you choose something else.`
+          : "No default department saved yet. Saving one here makes future assignments faster.";
+      }
+
+      renderDepartmentChipRow(
+        assignmentTemplateSuggestions,
+        getTemplateDepartmentSuggestions(),
+        "fill-default-department",
+        assignmentDefaultDeptInput?.value || templateState.defaultDepartment,
+        "No saved template department suggestions yet."
+      );
+
+      if (assignmentStoreSelect) {
+        assignmentStoreSelect.innerHTML = assignmentStores.length
+          ? assignmentStores.map((store) => `<option value="${escAttr(store.id)}">${escAttr(store.name || store.id)} (${escAttr(store.id)})</option>`).join("")
+          : `<option value="">No stores available</option>`;
+        assignmentStoreSelect.disabled = !assignmentStores.length;
+        if (assignmentStoreSelection && assignmentStores.some((store) => store.id === assignmentStoreSelection)) {
+          assignmentStoreSelect.value = assignmentStoreSelection;
+        } else if (assignmentStores.length) {
+          assignmentStoreSelection = assignmentStores[0].id;
+          assignmentStoreSelect.value = assignmentStoreSelection;
+        }
+      }
+
+      const selectedStoreId = assignmentStoreSelect?.value || assignmentStoreSelection || "";
+      const storeSuggestions = getStoreDepartmentSuggestions(selectedStoreId);
+      renderDepartmentChipRow(
+        assignmentStoreSuggestions,
+        dedupeDepartmentNames([...storeSuggestions, ...getTemplateDepartmentSuggestions()]),
+        "fill-assignment-department",
+        assignmentDepartmentInput?.value || "",
+        selectedStoreId
+          ? "No departments have been used in this store yet. Type a new one below."
+          : "Choose a store first to see department suggestions."
+      );
+
+      if (assignmentDepartmentList) {
+        assignmentDepartmentList.innerHTML = getCombinedDepartmentSuggestions(selectedStoreId)
+          .map((department) => `<option value="${escAttr(department)}"></option>`)
+          .join("");
+      }
+
+      if (assignmentDepartmentInput && !editingAssignmentRuleId && !cleanDepartmentText(assignmentDepartmentInput.value)) {
+        assignmentDepartmentInput.value = templateState.defaultDepartment || storeSuggestions[0] || "";
+      }
+
+      if (assignmentSaveBtn) assignmentSaveBtn.disabled = !assignmentStores.length;
+      renderAssignmentList();
+    }
+
+    function openAssignmentModal() {
+      assignmentBackdrop.style.display = "flex";
+      void loadAssignmentWorkspace().then(() => {
+        if (assignmentDepartmentInput) setTimeout(() => assignmentDepartmentInput.focus(), 40);
+      });
+    }
+
+    function closeAssignmentModal() {
+      assignmentBackdrop.style.display = "none";
+      editingAssignmentRuleId = "";
+      setAssignmentStatus("", "");
+    }
+
+    async function saveDefaultDepartment() {
+      const rawValue = cleanDepartmentText(assignmentDefaultDeptInput?.value || "");
+      const canonical = rawValue ? canonicalDepartmentName(rawValue, getCombinedDepartmentSuggestions(assignmentStoreSelect?.value)) : "";
+      const nextHints = dedupeDepartmentNames([
+        ...templateState.departmentHints,
+        ...assignmentRules.map((rule) => rule.department),
+        canonical
+      ]);
+      await saveTemplateStatePatch({
+        defaultDepartment: canonical || null,
+        departmentHints: nextHints
+      }, { showStatus: false });
+      renderAssignmentModal();
+      setAssignmentStatus(canonical ? `Default department saved as ${canonical}.` : "Default department cleared.", "success");
+    }
+
+    async function saveTemplateAssignment() {
+      const storeId = String(assignmentStoreSelect?.value || "").trim();
+      if (!storeId) {
+        setAssignmentStatus("Choose a store first.", "error");
+        return;
+      }
+
+      const oldRule = assignmentRules.find((rule) => rule.id === editingAssignmentRuleId) || null;
+      const rawDepartment = cleanDepartmentText(assignmentDepartmentInput?.value || templateState.defaultDepartment || "");
+      const department = canonicalDepartmentName(rawDepartment || "General", getCombinedDepartmentSuggestions(storeId));
+      const ruleId = buildAssignmentRuleId({ storeId, department, templateId: TEMPLATE_ID, frequency: "daily" });
+
+      try {
+        setAssignmentStatus(oldRule ? "Saving assignment changes..." : "Saving assignment...", "info");
+        if (oldRule && oldRule.id !== ruleId) {
+          await deleteDoc(doc(db, "store_template_rules", oldRule.id));
+        }
+        await setDoc(doc(db, "store_template_rules", ruleId), {
+          storeId,
+          department,
+          templateId: TEMPLATE_ID,
+          templateName: templateState.name || normalizeTemplateName(tplNameEl.textContent, "Logbook"),
+          frequency: "daily",
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        const templatePatch = {
+          departmentHints: dedupeDepartmentNames([
+            ...templateState.departmentHints,
+            ...assignmentRules.map((rule) => rule.department),
+            department
+          ])
+        };
+        if (!templateState.defaultDepartment) {
+          templatePatch.defaultDepartment = department;
+        }
+        await saveTemplateStatePatch(templatePatch, { showStatus: false });
+
+        assignmentDepartmentInput.value = department;
+        editingAssignmentRuleId = "";
+        await loadAssignmentWorkspace({ silent: true });
+        renderAssignmentModal();
+        setAssignmentStatus(
+          oldRule
+            ? `Assignment updated to ${department} for ${getStoreName(storeId)}.`
+            : `Assigned ${department} to ${getStoreName(storeId)}.`,
+          "success"
+        );
+        setStatus("Template assignment saved", "success");
+      } catch (error) {
+        console.error(error);
+        setAssignmentStatus("Failed to save the assignment.", "error");
+      }
+    }
+
+    async function removeTemplateAssignment(ruleId) {
+      const rule = assignmentRules.find((item) => item.id === ruleId);
+      if (!rule) return;
+      const confirmed = typeof styledConfirm === "function"
+        ? await styledConfirm(`Remove this template from ${getStoreName(rule.storeId)} / ${rule.department}?`, "Remove Assignment", { danger: true, confirmText: "Remove", icon: "🗑️" })
+        : window.confirm(`Remove this template from ${getStoreName(rule.storeId)} / ${rule.department}?`);
+      if (!confirmed) return;
+      try {
+        setAssignmentStatus("Removing assignment...", "info");
+        await deleteDoc(doc(db, "store_template_rules", ruleId));
+        if (editingAssignmentRuleId === ruleId) {
+          editingAssignmentRuleId = "";
+        }
+        await loadAssignmentWorkspace({ silent: true });
+        renderAssignmentModal();
+        setAssignmentStatus(`Removed ${rule.department} from ${getStoreName(rule.storeId)}.`, "success");
+        setStatus("Template assignment removed", "success");
+      } catch (error) {
+        console.error(error);
+        setAssignmentStatus("Failed to remove the assignment.", "error");
+      }
+    }
+
+    function clearSettingsToast() { settingsToast.className = "modal-toast"; settingsToast.textContent = ""; }
+    function showSettingsToast(msg, kind) { settingsToast.textContent = msg; settingsToast.className = "modal-toast " + kind; }
+
+    function closeSettings(force) {
+      if (!force) {
+        // simple unsaved check
+      }
+      settingsBackdrop.style.display = "none";
+      settingsBlockId = null;
+      settingsBlockType = null;
+      clearSettingsToast();
+    }
+
+    settingsCloseX.addEventListener("click", () => closeSettings());
+    settingsCancel.addEventListener("click", () => closeSettings());
+    settingsBackdrop.addEventListener("click", e => { if (e.target === settingsBackdrop) closeSettings(); });
+    if (manageAssignmentsBtn) {
+      manageAssignmentsBtn.addEventListener("click", () => {
+        openAssignmentModal();
+      });
+    }
+    if (assignmentCloseX) assignmentCloseX.addEventListener("click", closeAssignmentModal);
+    if (assignmentCloseBtn) assignmentCloseBtn.addEventListener("click", closeAssignmentModal);
+    if (assignmentBackdrop) {
+      assignmentBackdrop.addEventListener("click", (e) => {
+        if (e.target === assignmentBackdrop) closeAssignmentModal();
+      });
+    }
+    if (assignmentStoreSelect) {
+      assignmentStoreSelect.addEventListener("change", () => {
+        assignmentStoreSelection = assignmentStoreSelect.value;
+        if (!editingAssignmentRuleId && !cleanDepartmentText(assignmentDepartmentInput?.value || "")) {
+          const storeSuggestions = getStoreDepartmentSuggestions(assignmentStoreSelection);
+          assignmentDepartmentInput.value = templateState.defaultDepartment || storeSuggestions[0] || "";
+        }
+        renderAssignmentModal();
+      });
+    }
+    if (assignmentSaveDefaultBtn) {
+      assignmentSaveDefaultBtn.addEventListener("click", async () => {
+        await saveDefaultDepartment();
+      });
+    }
+    if (assignmentClearDefaultBtn) {
+      assignmentClearDefaultBtn.addEventListener("click", async () => {
+        if (assignmentDefaultDeptInput) assignmentDefaultDeptInput.value = "";
+        await saveDefaultDepartment();
+      });
+    }
+    if (assignmentSaveBtn) {
+      assignmentSaveBtn.addEventListener("click", async () => {
+        await saveTemplateAssignment();
+      });
+    }
+    if (assignmentDefaultDeptInput) {
+      assignmentDefaultDeptInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        await saveDefaultDepartment();
+      });
+    }
+    if (assignmentDepartmentInput) {
+      assignmentDepartmentInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        await saveTemplateAssignment();
+      });
+    }
+    if (assignmentCancelEditBtn) {
+      assignmentCancelEditBtn.addEventListener("click", () => {
+        editingAssignmentRuleId = "";
+        if (assignmentDepartmentInput) assignmentDepartmentInput.value = templateState.defaultDepartment || "";
+        renderAssignmentModal();
+        setAssignmentStatus("Edit cancelled.", "info");
+      });
+    }
+    if (assignmentTemplateSuggestions) {
+      assignmentTemplateSuggestions.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action='fill-default-department']");
+        if (!btn) return;
+        if (assignmentDefaultDeptInput) assignmentDefaultDeptInput.value = btn.dataset.department || "";
+      });
+    }
+    if (assignmentStoreSuggestions) {
+      assignmentStoreSuggestions.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action='fill-assignment-department']");
+        if (!btn) return;
+        if (assignmentDepartmentInput) {
+          assignmentDepartmentInput.value = btn.dataset.department || "";
+          renderAssignmentModal();
+        }
+      });
+    }
+    if (assignmentList) {
+      assignmentList.addEventListener("click", async (e) => {
+        const button = e.target.closest("[data-action]");
+        if (!button) return;
+        const action = button.dataset.action;
+        const ruleId = button.dataset.ruleId || "";
+        const department = button.dataset.department || "";
+        if (action === "edit-assignment") {
+          const rule = assignmentRules.find((item) => item.id === ruleId);
+          if (!rule) return;
+          setAssignmentEditor(rule);
+          if (assignmentDepartmentInput) setTimeout(() => assignmentDepartmentInput.focus(), 40);
+          return;
+        }
+        if (action === "make-default") {
+          if (assignmentDefaultDeptInput) assignmentDefaultDeptInput.value = department;
+          await saveDefaultDepartment();
+          return;
+        }
+        if (action === "remove-assignment") {
+          await removeTemplateAssignment(ruleId);
+        }
+      });
+    }
+
+    const BLOCK_ICONS = {
+      heading: '📝', signature: '✍️', temperature: '🌡️',
+      yes_no: '✅', note: '📋', section: '📁', week_commencing: '📅'
+    };
+    const BLOCK_TITLES = {
+      heading: 'Heading Settings', signature: 'Signature Settings', temperature: 'Temperature Settings',
+      yes_no: 'Yes / No Settings', note: 'Note Settings', section: 'Section Settings', week_commencing: 'Week Commencing Settings'
+    };
+
+    function openBlockSettings(block) {
+      settingsBlockId = block.block_id;
+      settingsBlockType = block.type;
+      const cfg = block.config || {};
+
+      settingsTitleText.textContent = BLOCK_TITLES[block.type] || "Block Settings";
+      clearSettingsToast();
+
+      let html = '';
+
+      // All blocks get a label field
+      html += `<div style="margin-bottom:14px;"><label>Label</label><input id="sLabel" value="${escAttr(block.label || defaultLabel(block.type))}" placeholder="Block label" /></div>`;
+
+      if (block.type === "heading") {
+        html += `<div style="margin-bottom:14px;"><label>Heading Level</label>`;
+        html += `<div style="display:flex;gap:8px;margin-top:6px;">`;
+        for (let i = 1; i <= 3; i++) {
+          const active = (cfg.level || 1) === i;
+          html += `<button class="btn${active ? ' primary' : ''}" data-level="${i}" onclick="document.querySelectorAll('[data-level]').forEach(b=>{b.classList.remove('primary')});this.classList.add('primary')" style="flex:1;text-align:center;font-size:${22 - i*3}px;font-weight:${800 - i*100};">H${i}</button>`;
+        }
+        html += `</div></div>`;
+      }
+
+      if (block.type === "signature") {
+        html += `<div style="margin-bottom:14px;"><label>Role / Description <span style="color:var(--text-muted)">(shown on the fill page)</span></label><input id="sRole" value="${escAttr(cfg.role || '')}" placeholder="e.g. Manager, Supervisor" /></div>`;
+      }
+
+      if (block.type === "temperature") {
+        html += `<div style="margin-bottom:14px;"><label>Temperature mode</label>${buildTemperatureModeSelectHtml(String(cfg.temperature_mode || 'custom').trim().toLowerCase() || 'custom', 'sTempMode')}</div>`;
+        html += `<div class="grid" style="margin-bottom:14px;">`;
+        html += `<div><label>Minimum (°C) <span style="color:var(--text-muted)">(optional)</span></label><input id="sTempMin" type="number" value="${cfg.min != null ? cfg.min : ''}" placeholder="e.g. 1" /></div>`;
+        html += `<div><label>Maximum (°C) <span style="color:var(--text-muted)">(optional)</span></label><input id="sTempMax" type="number" value="${cfg.max != null ? cfg.max : ''}" placeholder="e.g. 5" /></div>`;
+        html += `</div>`;
+        html += `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Values outside the range will be flagged on the fill page.</div>`;
+      }
+
+      if (block.type === "yes_no") {
+        html += `<div class="grid" style="margin-bottom:14px;">`;
+        html += `<div><label>Label for "Yes"</label><input id="sYesLabel" value="${escAttr(cfg.yes_label || 'Yes')}" placeholder="Yes" /></div>`;
+        html += `<div><label>Label for "No"</label><input id="sNoLabel" value="${escAttr(cfg.no_label || 'No')}" placeholder="No" /></div>`;
+        html += `</div>`;
+      }
+
+      if (block.type === "note") {
+        html += `<div style="margin-bottom:14px;"><label>Maximum characters <span style="color:var(--text-muted)">(blank = unlimited)</span></label><input id="sMaxLen" type="number" value="${cfg.max_length || ''}" placeholder="e.g. 500" min="1" /></div>`;
+        html += `<div style="margin-bottom:14px;"><label>Placeholder text <span style="color:var(--text-muted)">(optional)</span></label><input id="sPlaceholder" value="${escAttr(cfg.placeholder || '')}" placeholder="e.g. Enter notes here…" /></div>`;
+        html += `<div style="padding:12px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;margin-bottom:14px;"><label style="display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer;"><input id="sMonitorFilled" type="checkbox" ${cfg.monitor_when_filled !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent-primary);cursor:pointer;"> Show this note in Today Monitoring when staff fill it in</label></div>`;
+      }
+
+      if (block.type === "week_commencing") {
+        html += `<div style="padding:12px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;margin-bottom:14px;">`;
+        html += `<label style="display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer;"><input id="sAutoDate" type="checkbox" ${cfg.auto_from_entry_date !== false ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent-primary);cursor:pointer;"> Auto-fill from entry date</label>`;
+        html += `<div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">When enabled, the date is automatically calculated from the entry's week on the fill page.</div>`;
+        html += `</div>`;
+      }
+
+      if (block.type === "section") {
+        html += `<div style="padding:12px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;margin-bottom:14px;font-size:13px;color:var(--text-secondary);">Sections group child blocks together. Drag blocks below a section to nest them. Use <strong>Collapse</strong> on the canvas to hide/show children.</div>`;
+      }
+
+      settingsFields.innerHTML = html;
+      settingsBackdrop.style.display = "flex";
+
+      // Focus the label field
+      const labelInput = document.getElementById("sLabel");
+      if (labelInput) setTimeout(() => labelInput.focus(), 50);
+    }
+
+    function escAttr(str) {
+      return String(str||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    settingsSave.addEventListener("click", async () => {
+      if (!settingsBlockId) return;
+      clearSettingsToast();
+
+      const label = (document.getElementById("sLabel")?.value || "").trim();
+      if (!label) { showSettingsToast("Label cannot be empty.", "warn"); return; }
+
+      const patch = {};
+      const blockUpdate = { label };
+
+      if (settingsBlockType === "heading") {
+        const activeBtn = settingsFields.querySelector("[data-level].primary");
+        patch.level = activeBtn ? Number(activeBtn.dataset.level) : 1;
+      }
+
+      if (settingsBlockType === "signature") {
+        patch.role = (document.getElementById("sRole")?.value || "").trim() || "Manager";
+      }
+
+      if (settingsBlockType === "temperature") {
+        const minVal = document.getElementById("sTempMin")?.value;
+        const maxVal = document.getElementById("sTempMax")?.value;
+        patch.temperature_mode = (document.getElementById("sTempMode")?.value || "custom").trim() || "custom";
+        patch.min = (minVal !== "" && minVal != null) ? Number(minVal) : null;
+        patch.max = (maxVal !== "" && maxVal != null) ? Number(maxVal) : null;
+        if (patch.min != null && patch.max != null && patch.min > patch.max) {
+          showSettingsToast("Minimum cannot be greater than maximum.", "warn");
+          return;
+        }
+      }
+
+      if (settingsBlockType === "yes_no") {
+        patch.yes_label = (document.getElementById("sYesLabel")?.value || "").trim() || "Yes";
+        patch.no_label = (document.getElementById("sNoLabel")?.value || "").trim() || "No";
+      }
+
+      if (settingsBlockType === "note") {
+        const maxLen = document.getElementById("sMaxLen")?.value;
+        patch.max_length = maxLen ? Number(maxLen) : null;
+        patch.placeholder = (document.getElementById("sPlaceholder")?.value || "").trim() || null;
+        patch.monitor_when_filled = !!document.getElementById("sMonitorFilled")?.checked;
+      }
+
+      if (settingsBlockType === "week_commencing") {
+        patch.auto_from_entry_date = !!document.getElementById("sAutoDate")?.checked;
+      }
+
+      // Save label + config
+      const ref = doc(db, "logbook_templates", TEMPLATE_ID, "blocks", settingsBlockId);
+      const block = blocks.find(x => x.block_id === settingsBlockId);
+      const cfg = { ...(block?.config||{}), ...patch };
+      await updateDoc(ref, { label, config: cfg });
+      closeSettings(true);
+      await loadBlocks();
+      setStatus("Settings saved", "success");
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       TABLE EDITOR — interactive spreadsheet-style editing
+       ═══════════════════════════════════════════════════════════ */
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalCloseX = document.getElementById("modalCloseX");
+    const modalToast = document.getElementById("modalToast");
+    const tableTitle = document.getElementById("tableTitle");
+    const tableNote = document.getElementById("tableNote");
+    const rowModePerDay = document.getElementById("rowModePerDay");
+    const showDatesInRows = document.getElementById("showDatesInRows");
+    const modalCancel = document.getElementById("modalCancel");
+    const modalSave = document.getElementById("modalSave");
+    const teTable = document.getElementById("teTable");
+    const teHeadRow = document.getElementById("teHeadRow");
+    const teBody = document.getElementById("teBody");
+    const teUndo = document.getElementById("teUndo");
+    const teRedo = document.getElementById("teRedo");
+    const teCount = document.getElementById("teCount");
+    const tePresetsBtn = document.getElementById("tePresetsBtn");
+    let modalBlockId = null;
+    let teSavedSnapshot = null;
+    const MAX_COLS = 20;
+    const MAX_ROWS = 50;
+    // ── State ──
+    let teCols = [];
+    let teRows = [];
+    let teHistory = [];
+    let teHistoryIdx = -1;
+
+    const TYPE_META = {
+      rowLabel:  { icon:"",  label:"Label" },
+      text:      { icon:"",  label:"Text" },
+      yn:        { icon:"",  label:"Yes/No" },
+      checkbox:  { icon:"",  label:"Tick" },
+      tickcross: { icon:"",  label:"✓ / ✗" },
+      number:    { icon:"",  label:"Number" },
+      signature: { icon:"",  label:"Sig" },
+      initials:  { icon:"",  label:"Initials" },
+      time:      { icon:"",  label:"Time" },
+      date:      { icon:"",  label:"Date" },
+    };
+
+    function slugLabel(str) {
+      return String(str||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"") || "col";
+    }
+    // ── Undo / Redo ──
+    function teSnapshot() {
+      const snap = JSON.stringify({ cols:teCols, rows:teRows });
+      // Trim future states
+      teHistory = teHistory.slice(0, teHistoryIdx + 1);
+      teHistory.push(snap);
+      if (teHistory.length > 60) teHistory.shift();
+      teHistoryIdx = teHistory.length - 1;
+      updateUndoButtons();
+    }
+    function teUndoAction() {
+      if (teHistoryIdx <= 0) return;
+      teHistoryIdx--;
+      const s = JSON.parse(teHistory[teHistoryIdx]);
+      teCols = s.cols; teRows = s.rows;
+      teRender();
+      updateUndoButtons();
+    }
+    function teRedoAction() {
+      if (teHistoryIdx >= teHistory.length - 1) return;
+      teHistoryIdx++;
+      const s = JSON.parse(teHistory[teHistoryIdx]);
+      teCols = s.cols; teRows = s.rows;
+      teRender();
+      updateUndoButtons();
+    }
+    function updateUndoButtons() {
+      teUndo.disabled = teHistoryIdx <= 0;
+      teRedo.disabled = teHistoryIdx >= teHistory.length - 1;
+      const colCount = teCols.length;
+      const rowCount = rowModePerDay.checked ? 7 : teRows.length;
+      teCount.textContent = `${colCount} col${colCount!==1?'s':''} · ${rowCount} row${rowCount!==1?'s':''}`;
+    }
+    teUndo.addEventListener("click", teUndoAction);
+    teRedo.addEventListener("click", teRedoAction);
+    document.addEventListener("keydown", e => {
+      if (settingsBackdrop.style.display === "flex") {
+        if (e.key === "Escape") { e.preventDefault(); closeSettings(); return; }
+        if ((e.ctrlKey||e.metaKey) && e.key === "Enter") { e.preventDefault(); settingsSave.click(); return; }
+      }
+      if (modalBackdrop.style.display !== "flex") return;
+      if (e.key === "Escape") { e.preventDefault(); closeModal(); return; }
+      if ((e.ctrlKey||e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); teUndoAction(); }
+      if ((e.ctrlKey||e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); teRedoAction(); }
+    });
+    // ── Presets ──
+    const PRESETS = [
+      { name:"Mon – Sun (Yes/No)", desc:"7 day columns with Y/N checks", cols:[
+        {key:"item",label:"Item",input:"rowLabel"},
+        {key:"mon",label:"Mon",input:"yn"},{key:"tue",label:"Tue",input:"yn"},{key:"wed",label:"Wed",input:"yn"},
+        {key:"thu",label:"Thu",input:"yn"},{key:"fri",label:"Fri",input:"yn"},{key:"sat",label:"Sat",input:"yn"},{key:"sun",label:"Sun",input:"yn"}
+      ]},
+      { name:"AM / PM Temperature", desc:"Temp readings with time & initials", cols:[
+        {key:"item",label:"Item",input:"rowLabel"},
+        {key:"am_time",label:"AM Time",input:"time"},{key:"am_temp",label:"AM Temp",input:"number"},{key:"am_initials",label:"AM Initials",input:"initials"},
+        {key:"pm_time",label:"PM Time",input:"time"},{key:"pm_temp",label:"PM Temp",input:"number"},{key:"pm_initials",label:"PM Initials",input:"initials"}
+      ]},
+      { name:"Mon – Sun (Temperature)", desc:"Daily temperature log", cols:[
+        {key:"item",label:"Item",input:"rowLabel"},
+        {key:"mon",label:"Mon",input:"number"},{key:"tue",label:"Tue",input:"number"},{key:"wed",label:"Wed",input:"number"},
+        {key:"thu",label:"Thu",input:"number"},{key:"fri",label:"Fri",input:"number"},{key:"sat",label:"Sat",input:"number"},{key:"sun",label:"Sun",input:"number"}
+      ]},
+      { name:"Cleaning / Sign-off Log", desc:"Task, date, time, signature", cols:[
+        {key:"task",label:"Task",input:"rowLabel"},
+        {key:"date",label:"Date",input:"date"},{key:"time",label:"Time",input:"time"},
+        {key:"done",label:"Done",input:"yn"},{key:"signed",label:"Signed By",input:"signature"}
+      ]},
+      { name:"Task Checklist", desc:"Task, Assigned, Status, Notes", cols:[
+        {key:"task",label:"Task",input:"rowLabel"},
+        {key:"assigned",label:"Assigned To",input:"text"},{key:"status",label:"Done",input:"yn"},{key:"notes",label:"Notes",input:"text"}
+      ]},
+      { name:"Manager Sign-off", desc:"Item, check, manager signature", cols:[
+        {key:"item",label:"Item",input:"rowLabel"},
+        {key:"checked",label:"Checked",input:"yn"},{key:"date",label:"Date",input:"date"},
+        {key:"manager_sig",label:"Manager Signature",input:"signature"},{key:"initials",label:"Initials",input:"initials"}
+      ]},
+    ];
+
+    let presetsOpen = false;
+    tePresetsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (presetsOpen) { closePresets(); return; }
+      const menu = document.createElement("div");
+      menu.className = "te-presets-menu";
+      menu.id = "tePresetsMenu";
+      PRESETS.forEach(p => {
+        const btn = document.createElement("button");
+        btn.innerHTML = `${p.name}<small>${p.desc}</small>`;
+        btn.addEventListener("click", () => {
+          teCols = JSON.parse(JSON.stringify(p.cols));
+          teSnapshot();
+          teRender();
+          closePresets();
+        });
+        menu.appendChild(btn);
+      });
+      // Position below the button
+      tePresetsBtn.parentElement.appendChild(menu);
+      menu.style.position = "absolute";
+      menu.style.top = "100%";
+      menu.style.left = "0";
+      menu.style.marginTop = "4px";
+      presetsOpen = true;
+      tePresetsBtn.classList.add("active");
+      setTimeout(() => document.addEventListener("click", closePresetsOnClick, {once:true}), 10);
+    });
+    function closePresets() {
+      const m = document.getElementById("tePresetsMenu");
+      if (m) m.remove();
+      presetsOpen = false;
+      tePresetsBtn.classList.remove("active");
+    }
+    function closePresetsOnClick() { closePresets(); }
+
+    // (Type selection is now inline pills — no dropdown needed)
+
+    // ── Render the interactive table ──
+    function teRender() {
+      teHeadRow.innerHTML = "";
+      teBody.innerHTML = "";
+
+      const isPerDay = rowModePerDay.checked;
+      const displayRows = isPerDay
+        ? ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((d,i)=>({id:"day"+i,label:d}))
+        : teRows;
+
+      // ─ Header ─
+      teCols.forEach((col, ci) => {
+        const th = document.createElement("th");
+        th.dataset.colIdx = ci;
+        th.draggable = true;
+
+        const inner = document.createElement("div");
+        inner.className = "te-th-inner";
+
+        // Top row: drag handle + input + delete
+        const top = document.createElement("div");
+        top.className = "te-th-top";
+
+        const dragH = document.createElement("span");
+        dragH.className = "te-drag-col";
+        dragH.textContent = "\u2807";
+        dragH.title = "Drag to reorder";
+
+        const inp = document.createElement("input");
+        inp.className = "te-th-input";
+        inp.value = col.label;
+        inp.placeholder = "Column name…";
+        inp.addEventListener("input", () => { teCols[ci].label = inp.value; teCols[ci].key = slugLabel(inp.value) || ("col"+ci); updateUndoButtons(); });
+        inp.addEventListener("change", () => teSnapshot());
+        inp.addEventListener("keydown", e => {
+          if (e.key === "Enter") { e.preventDefault(); inp.blur(); }
+          if (e.key === "Tab" && !e.shiftKey) {
+            // Tab to next column or add new one
+            e.preventDefault();
+            const nextTh = teHeadRow.children[ci + 1];
+            if (nextTh && !nextTh.classList.contains("te-add-col")) {
+              nextTh.querySelector(".te-th-input")?.focus();
+            } else {
+              addColumn();
+              // Focus the new column after render
+              requestAnimationFrame(() => {
+                const newTh = teHeadRow.children[teCols.length - 1];
+                if (newTh) newTh.querySelector(".te-th-input")?.focus();
+              });
+            }
+          }
+        });
+
+        const dup = document.createElement("button");
+        dup.className = "te-th-dup";
+        dup.innerHTML = "&#x2398;"; // copy symbol
+        dup.title = "Duplicate column";
+        dup.addEventListener("click", e => {
+          e.stopPropagation();
+          const clone = JSON.parse(JSON.stringify(teCols[ci]));
+          clone.label = clone.label + " copy";
+          clone.key = slugLabel(clone.label);
+          teCols.splice(ci + 1, 0, clone);
+          teSnapshot();
+          teRender();
+        });
+
+        const del = document.createElement("button");
+        del.className = "te-th-del";
+        del.textContent = "\u2715";
+        del.title = "Remove column";
+        del.addEventListener("click", e => { e.stopPropagation(); teCols.splice(ci,1); teSnapshot(); teRender(); });
+
+        top.appendChild(dragH);
+        top.appendChild(inp);
+        top.appendChild(dup);
+        top.appendChild(del);
+
+        // Bottom row: inline type pills
+        const bot = document.createElement("div");
+        bot.className = "te-th-bottom";
+        Object.entries(TYPE_META).forEach(([val, meta]) => {
+          const pill = document.createElement("button");
+          pill.className = "te-th-pill" + (col.input === val ? " active" : "");
+          pill.textContent = meta.label;
+          pill.addEventListener("click", e => {
+            e.stopPropagation();
+            if (teCols[ci].input === val) return;
+            teCols[ci].input = val;
+            teSnapshot();
+            // Update pills in place without full re-render
+            bot.querySelectorAll(".te-th-pill").forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            // Re-render body cells to reflect type change
+            teRender();
+          });
+          bot.appendChild(pill);
+        });
+
+        inner.appendChild(top);
+        inner.appendChild(bot);
+
+        // Number min/max config row
+        if (col.input === "number") {
+          const numCfg = document.createElement("div");
+          numCfg.className = "te-th-numcfg";
+          const minLbl = document.createElement("span");
+          minLbl.textContent = "min";
+          const minInp = document.createElement("input");
+          minInp.type = "number";
+          minInp.placeholder = "—";
+          minInp.value = (col.min != null && col.min !== "") ? col.min : "";
+          minInp.addEventListener("input", () => { teCols[ci].min = minInp.value !== "" ? Number(minInp.value) : null; });
+          minInp.addEventListener("change", () => teSnapshot());
+          const maxLbl = document.createElement("span");
+          maxLbl.textContent = "max";
+          const maxInp = document.createElement("input");
+          maxInp.type = "number";
+          maxInp.placeholder = "—";
+          maxInp.value = (col.max != null && col.max !== "") ? col.max : "";
+          maxInp.addEventListener("input", () => { teCols[ci].max = maxInp.value !== "" ? Number(maxInp.value) : null; });
+          maxInp.addEventListener("change", () => teSnapshot());
+          const modeLbl = document.createElement("span");
+          modeLbl.textContent = "mode";
+          const modeSel = document.createElement("select");
+          TEMPERATURE_MODE_OPTIONS.forEach((item) => {
+            const option = document.createElement("option");
+            option.value = item.value;
+            option.textContent = item.label;
+            modeSel.appendChild(option);
+          });
+          modeSel.value = String(col.temperature_mode || "custom").trim().toLowerCase() || "custom";
+          modeSel.addEventListener("change", () => {
+            teCols[ci].temperature_mode = modeSel.value;
+            teSnapshot();
+            teRender();
+          });
+          numCfg.appendChild(minLbl);
+          numCfg.appendChild(minInp);
+          numCfg.appendChild(maxLbl);
+          numCfg.appendChild(maxInp);
+          numCfg.appendChild(modeLbl);
+          numCfg.appendChild(modeSel);
+          inner.appendChild(numCfg);
+        }
+
+        th.appendChild(inner);
+
+        // Column drag
+        th.addEventListener("dragstart", e => {
+          e.dataTransfer.setData("text/plain", JSON.stringify({kind:"te-col",idx:ci}));
+          th.classList.add("dragging");
+        });
+        th.addEventListener("dragend", () => th.classList.remove("dragging"));
+        th.addEventListener("dragover", e => {
+          e.preventDefault();
+          const rect = th.getBoundingClientRect();
+          const mid = rect.left + rect.width / 2;
+          th.classList.toggle("drag-over-left", e.clientX < mid);
+          th.classList.toggle("drag-over-right", e.clientX >= mid);
+        });
+        th.addEventListener("dragleave", () => { th.classList.remove("drag-over-left","drag-over-right"); });
+        th.addEventListener("drop", e => {
+          e.preventDefault();
+          th.classList.remove("drag-over-left","drag-over-right");
+          try {
+            const d = JSON.parse(e.dataTransfer.getData("text/plain"));
+            if (d.kind !== "te-col") return;
+            const fromIdx = d.idx;
+            const rect = th.getBoundingClientRect();
+            let toIdx = e.clientX < rect.left + rect.width/2 ? ci : ci + 1;
+            if (fromIdx < toIdx) toIdx--;
+            if (fromIdx === toIdx) return;
+            const [moved] = teCols.splice(fromIdx, 1);
+            teCols.splice(toIdx, 0, moved);
+            teSnapshot();
+            teRender();
+          } catch {}
+        });
+
+        teHeadRow.appendChild(th);
+      });
+
+      // Add-column cell
+      const addTh = document.createElement("th");
+      addTh.className = "te-add-col";
+      addTh.title = "Add column";
+      addTh.innerHTML = '<div class="te-add-col-icon">+</div>';
+      addTh.addEventListener("click", () => addColumn());
+      addTh.addEventListener("dragover", e => e.preventDefault());
+      addTh.addEventListener("drop", e => {
+        e.preventDefault();
+        try {
+          const d = JSON.parse(e.dataTransfer.getData("text/plain"));
+          if (d.kind !== "te-col") return;
+          const [moved] = teCols.splice(d.idx, 1);
+          teCols.push(moved);
+          teSnapshot(); teRender();
+        } catch {}
+      });
+      teHeadRow.appendChild(addTh);
+
+      // ─ Body rows ─
+      displayRows.forEach((r, ri) => {
+        const tr = document.createElement("tr");
+        tr.dataset.rowIdx = ri;
+
+        teCols.forEach((col, ci) => {
+          const td = document.createElement("td");
+          if (col.input === "rowLabel") {
+            td.className = "te-row-label";
+            const inner = document.createElement("div");
+            inner.className = "te-row-label-inner";
+
+            if (!isPerDay) {
+              const dragR = document.createElement("span");
+              dragR.className = "te-drag-row";
+              dragR.textContent = "\u2807";
+              inner.appendChild(dragR);
+            }
+
+            if (isPerDay) {
+              const span = document.createElement("span");
+              span.style.padding = "7px 10px";
+              span.style.display = "inline-block";
+              span.textContent = r.label;
+              inner.appendChild(span);
+            } else {
+              const inp = document.createElement("input");
+              inp.className = "te-row-label-input";
+              inp.value = r.label;
+              inp.placeholder = "Row name…";
+              inp.addEventListener("input", () => { teRows[ri].label = inp.value; teRows[ri].id = slugLabel(inp.value)||("row"+ri); });
+              inp.addEventListener("change", () => teSnapshot());
+              inp.addEventListener("keydown", e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  // Move to next row or add new
+                  const nextTr = teBody.children[ri + 1];
+                  if (nextTr && !nextTr.classList.contains("te-add-row")) {
+                    nextTr.querySelector(".te-row-label-input")?.focus();
+                  } else if (!isPerDay) {
+                    addRow();
+                    requestAnimationFrame(() => {
+                      const newTr = teBody.children[teRows.length - 1];
+                      if (newTr) newTr.querySelector(".te-row-label-input")?.focus();
+                    });
+                  }
+                }
+              });
+              inner.appendChild(inp);
+
+              const dup = document.createElement("button");
+              dup.className = "te-row-dup";
+              dup.textContent = "\u2398";
+              dup.title = "Duplicate row";
+              dup.addEventListener("click", () => {
+                const clone = JSON.parse(JSON.stringify(teRows[ri]));
+                clone.label = clone.label + " copy";
+                clone.id = slugLabel(clone.label) || ("row" + (teRows.length));
+                teRows.splice(ri + 1, 0, clone);
+                teSnapshot(); teRender();
+              });
+              td.appendChild(dup);
+
+              const del = document.createElement("button");
+              del.className = "te-row-del";
+              del.textContent = "\u2715";
+              del.title = "Remove row";
+              del.addEventListener("click", () => { teRows.splice(ri,1); teSnapshot(); teRender(); });
+              td.appendChild(del);
+            }
+
+            td.insertBefore(inner, td.firstChild);
+          } else {
+            const ph = document.createElement("span");
+            ph.className = "te-cell-ph";
+            if (col.input === "number") {
+              const hasMin = col.min != null && col.min !== "";
+              const hasMax = col.max != null && col.max !== "";
+              ph.textContent = hasMin || hasMax ? (hasMin ? col.min : "?") + "–" + (hasMax ? col.max : "?") : "0.0";
+            } else {
+              const phMap = { yn:"Y / N", checkbox:"☑", tickcross:"✓ / ✗", signature:"Sig ___", initials:"AB", time:"00:00", date:"dd/mm" };
+              ph.textContent = phMap[col.input] || "···";
+            }
+            td.appendChild(ph);
+          }
+          tr.appendChild(td);
+        });
+
+        // Empty cell under the add-col header
+        const emptyTd = document.createElement("td");
+        emptyTd.style.borderStyle = "dashed";
+        emptyTd.style.borderColor = "var(--border-color)";
+        tr.appendChild(emptyTd);
+
+        // Row drag (non-perDay only)
+        if (!isPerDay) {
+          tr.draggable = true;
+          tr.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text/plain", JSON.stringify({kind:"te-row",idx:ri}));
+            tr.classList.add("dragging");
+          });
+          tr.addEventListener("dragend", () => tr.classList.remove("dragging"));
+          tr.addEventListener("dragover", e => {
+            e.preventDefault();
+            tr.classList.add("drag-over-top");
+          });
+          tr.addEventListener("dragleave", () => tr.classList.remove("drag-over-top"));
+          tr.addEventListener("drop", e => {
+            e.preventDefault();
+            tr.classList.remove("drag-over-top");
+            try {
+              const d = JSON.parse(e.dataTransfer.getData("text/plain"));
+              if (d.kind !== "te-row") return;
+              const from = d.idx;
+              let to = ri;
+              if (from === to) return;
+              const [moved] = teRows.splice(from, 1);
+              teRows.splice(to, 0, moved);
+              teSnapshot(); teRender();
+            } catch{}
+          });
+        }
+
+        teBody.appendChild(tr);
+      });
+
+      // Add-row
+      if (!isPerDay) {
+        const addTr = document.createElement("tr");
+        addTr.className = "te-add-row";
+        const addTd = document.createElement("td");
+        addTd.colSpan = teCols.length + 1;
+        addTd.textContent = "+ Add row";
+        addTd.addEventListener("click", () => addRow());
+        addTr.appendChild(addTd);
+        // Drop zone for reordering to end
+        addTr.addEventListener("dragover", e => e.preventDefault());
+        addTr.addEventListener("drop", e => {
+          e.preventDefault();
+          try {
+            const d = JSON.parse(e.dataTransfer.getData("text/plain"));
+            if (d.kind !== "te-row") return;
+            const [moved] = teRows.splice(d.idx, 1);
+            teRows.push(moved);
+            teSnapshot(); teRender();
+          } catch{}
+        });
+        teBody.appendChild(addTr);
+      }
+
+      updateUndoButtons();
+    }
+
+    function addColumn() {
+      if (teCols.length >= MAX_COLS) { showToast(`Maximum ${MAX_COLS} columns reached.`, "warn"); return; }
+      const idx = teCols.length;
+      teCols.push({ key:"col"+idx, label:"", input:"text" });
+      teSnapshot();
+      teRender();
+      requestAnimationFrame(() => {
+        const th = teHeadRow.children[idx];
+        if (th) th.querySelector(".te-th-input")?.focus();
+      });
+    }
+
+    function addRow() {
+      if (teRows.length >= MAX_ROWS) { showToast(`Maximum ${MAX_ROWS} rows reached.`, "warn"); return; }
+      const idx = teRows.length;
+      teRows.push({ id:"row"+idx, label:"" });
+      teSnapshot();
+      teRender();
+      requestAnimationFrame(() => {
+        const tr = teBody.children[idx];
+        if (tr) tr.querySelector(".te-row-label-input")?.focus();
+      });
+    }
+
+    // Wire auto-rows toggle
+    rowModePerDay.addEventListener("change", () => { teRender(); });
+    showDatesInRows.addEventListener("change", () => { teRender(); });
+
+    // ── Toast helper ──
+    let toastTimer = null;
+    function showToast(msg, kind="warn", duration=4000) {
+      clearTimeout(toastTimer);
+      modalToast.textContent = msg;
+      modalToast.className = "modal-toast " + kind;
+      if (duration > 0) { toastTimer = setTimeout(() => { modalToast.className = "modal-toast"; }, duration); }
+    }
+    function clearToast() { clearTimeout(toastTimer); modalToast.className = "modal-toast"; }
+
+    function openTableModal(block) {
+      const cfg = block.config || defaultConfig("table");
+      modalBlockId = block.block_id;
+      tableTitle.value = cfg.title || block.label || "Table";
+      tableNote.value = cfg.note || "";
+      rowModePerDay.checked = (cfg.row_mode === "per_day");
+      showDatesInRows.checked = !!cfg.show_dates_in_rows;
+      teCols = JSON.parse(JSON.stringify(Array.isArray(cfg.columns) && cfg.columns.length ? cfg.columns : [{key:"item",label:"Item",input:"rowLabel"},{key:"mon",label:"Mon",input:"yn"},{key:"tue",label:"Tue",input:"yn"}]));
+      teRows = JSON.parse(JSON.stringify(Array.isArray(cfg.rows) && cfg.rows.length ? cfg.rows : [{id:"row1",label:"Row 1"},{id:"row2",label:"Row 2"}]));
+      teHistory = []; teHistoryIdx = -1; teSnapshot();
+      teSavedSnapshot = JSON.stringify({ cols:teCols, rows:teRows, title:tableTitle.value, note:tableNote.value });
+      clearToast(); modalBackdrop.style.display = "flex"; teRender();
+    }
+    function hasUnsavedChanges() {
+      if (!teSavedSnapshot) return false;
+      return JSON.stringify({ cols:teCols, rows:teRows, title:tableTitle.value, note:tableNote.value }) !== teSavedSnapshot;
+    }
+    async function closeModal(force) {
+      if (!force && hasUnsavedChanges()) {
+        const ok = await styledConfirm("You have unsaved changes. Close without saving?", "Unsaved Changes", { icon: "⚠️", confirmText: "Discard", danger: true });
+        if (!ok) return;
+      }
+      modalBackdrop.style.display = "none"; modalBlockId = null; teSavedSnapshot = null; clearToast(); closePresets();
+    }
+    modalCloseX.addEventListener("click", () => closeModal());
+    modalCancel.addEventListener("click", () => closeModal());
+    modalBackdrop.addEventListener("click", e => { if (e.target === modalBackdrop) closeModal(); });
+
+    modalSave.addEventListener("click", async () => {
+      if (!modalBlockId) return;
+      clearToast();
+      const namedCols = teCols.filter(c => c.label.trim());
+      const emptyColCount = teCols.length - namedCols.length;
+      if (emptyColCount > 0) {
+        showToast(`${emptyColCount} column${emptyColCount > 1 ? "s" : ""} with no name will be removed. Name them or press Save again to confirm.`, "warn");
+        if (!modalSave._confirmedEmpty) { modalSave._confirmedEmpty = true; return; }
+      }
+      modalSave._confirmedEmpty = false;
+      const cols = namedCols;
+      const rows = teRows.filter(r => r.label.trim());
+      if (!cols.length) { showToast("Add at least 1 column with a name.", "warn"); return; }
+      if (!rowModePerDay.checked && !rows.length) { showToast("Add at least 1 row, or enable Auto rows Mon–Sun.", "warn"); return; }
+      const keys = cols.map(c => c.key);
+      if (keys.filter((k,i) => keys.indexOf(k) !== i).length) {
+        cols.forEach((c,i) => { if (cols.slice(0,i).filter(x => x.key === c.key).length > 0) c.key = c.key + "_" + (cols.slice(0,i).filter(x => x.key === c.key).length + 1); });
+        showToast("Duplicate column names were auto-renamed.", "info");
+      }
+      for (const c of cols) {
+        if (c.input === "number" && c.min != null && c.max != null && c.min > c.max) {
+          showToast(`Column "${c.label}": min (${c.min}) > max (${c.max}).`, "warn"); return;
+        }
+      }
+      await updateBlockConfig(modalBlockId, { title:tableTitle.value.trim()||"Table", note:tableNote.value.trim()||"", columns:cols, rows:rows, row_mode:rowModePerDay.checked?"per_day":null, show_dates_in_rows:!!showDatesInRows.checked });
+      closeModal(true); await loadBlocks(); setStatus("Table saved", "success");
+    });
+
+async function addBlock(type, idx, parentId) {
+      setStatus("Adding block…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+      for (const x of arr.filter(x => x.sort_index >= idx)) {
+        await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", x.id), { sort_index: x.sort_index + 1 });
+      }
+      await addDoc(colRef, { type, label: defaultLabel(type), sort_index: idx, parent_block_id: parentId || null, config: defaultConfig(type) });
+      await loadBlocks();
+      setStatus("Block added", "success");
+    }
+
+    async function moveBlock(id, newIdx, newParentId) {
+      setStatus("Reordering…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+      const oldIdx = arr.findIndex(x => x.id === id);
+      if (oldIdx === -1) return;
+      const [moved] = arr.splice(oldIdx, 1);
+      arr.splice(newIdx, 0, moved);
+      await Promise.all(arr.map((b, i) => updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.id), { sort_index: i })));
+      await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", id), { parent_block_id: newParentId || null });
+      await loadBlocks();
+      setStatus("Order updated", "success");
+    }
+
+    async function deleteBlock(id) {
+      setStatus("Deleting…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const all = [];
+      snap.forEach(d => all.push({ id:d.id, ...d.data() }));
+      const toDelete = all.filter(b => b.id === id || b.parent_block_id === id).map(b => b.id);
+      const remaining = all.filter(b => !toDelete.includes(b.id));
+      await Promise.all(remaining.map((b, idx) => updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.id), { sort_index: idx })));
+      await Promise.all(toDelete.map(blockId => deleteDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", blockId))));
+      await loadBlocks();
+      setStatus("Deleted", "success");
+    }
+
+    async function duplicateBlock(id) {
+      setStatus("Duplicating…", "info");
+      const colRef = collection(db, "logbook_templates", TEMPLATE_ID, "blocks");
+      const snap = await getDocs(query(colRef, orderBy("sort_index")));
+      const arr = [];
+      snap.forEach(d => arr.push({ id:d.id, ...d.data() }));
+      const idx = arr.findIndex(b => b.id === id);
+      if (idx === -1) return;
+      const original = arr[idx];
+      for (const b of arr.filter(b => b.sort_index >= original.sort_index + 1)) {
+        await updateDoc(doc(db, "logbook_templates", TEMPLATE_ID, "blocks", b.id), { sort_index: b.sort_index + 1 });
+      }
+      await addDoc(colRef, { type: original.type, label: (original.label || defaultLabel(original.type)) + " (copy)", sort_index: original.sort_index + 1, parent_block_id: original.parent_block_id || null, config: original.config || {} });
+      await loadBlocks();
+      setStatus("Duplicated", "success");
+    }
+
+    document.querySelectorAll(".toolbox-item").forEach(item => {
+      item.addEventListener("dragstart", e => {
+        const payload = { kind:"toolbox", type:item.dataset.type };
+        e.dataTransfer.setData("text/plain", JSON.stringify(payload));
+      });
+    });
+
+    document.addEventListener("dragstart", e => {
+      const actionBtn = e.target.closest && e.target.closest("button.action");
+      if (actionBtn) return;
+      const b = e.target.closest(".block") || e.target.closest(".section-wrap");
+      if (!b || previewMode) return;
+      e.dataTransfer.setData("text/plain", JSON.stringify({ kind:"block", id:b.dataset.id }));
+    });
+
+    canvasInner.addEventListener("dragover", e => {
+      if (previewMode) return;
+      e.preventDefault();
+      canvasInner.classList.add("drag-over");
+      // Highlight section-children if hovering over one
+      const secChildren = e.target.closest && e.target.closest(".section-children");
+      canvasInner.querySelectorAll(".section-children.drag-over").forEach(el => { if (el !== secChildren) el.classList.remove("drag-over"); });
+      if (secChildren) secChildren.classList.add("drag-over");
+    });
+    canvasInner.addEventListener("dragleave", e => {
+      if (e.target === canvasInner) canvasInner.classList.remove("drag-over");
+      const secChildren = e.target.closest && e.target.closest(".section-children");
+      if (secChildren && !secChildren.contains(e.relatedTarget)) secChildren.classList.remove("drag-over");
+    });
+    canvasInner.addEventListener("drop", async e => {
+      if (previewMode) return;
+      e.preventDefault();
+      canvasInner.classList.remove("drag-over");
+      canvasInner.querySelectorAll(".section-children.drag-over").forEach(el => el.classList.remove("drag-over"));
+      let d={}; try{ d=JSON.parse(e.dataTransfer.getData("text/plain")); }catch{}
+      const idx = getDropIndex(e);
+      const parentId = getDropParentId(e);
+      if (d.kind === "toolbox") await addBlock(d.type, idx, parentId);
+      if (d.kind === "block") await moveBlock(d.id, idx, parentId);
+    });
+
+    document.querySelectorAll(".toolbox-item").forEach(item => {
+      item.addEventListener("pointerdown", e => {
+        if (e.pointerType !== "touch" || previewMode) return;
+        e.preventDefault();
+        touchDrag = { kind:"toolbox", type:item.dataset.type };
+        lastTouch = e;
+        createGhost(item.firstElementChild.textContent.trim(), item.dataset.type);
+        moveGhost(e.clientX, e.clientY);
+      });
+    });
+
+    document.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "touch" || previewMode) return;
+      const actionBtn = e.target.closest && e.target.closest("button.action");
+      if (actionBtn) return;
+      const b = e.target.closest(".block") || e.target.closest(".section-wrap");
+      if (!b) return;
+      e.preventDefault();
+      touchDrag = { kind:"block", id:b.dataset.id };
+      lastTouch = e;
+      const lbl = b.querySelector(".block-label")?.textContent?.trim() || "Block";
+      createGhost(lbl, b.dataset.type || "block");
+      moveGhost(e.clientX, e.clientY);
+    });
+
+    window.addEventListener("pointermove", e => {
+      if (e.pointerType !== "touch" || !touchDrag) return;
+      lastTouch = e;
+      moveGhost(e.clientX, e.clientY);
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (el && (canvasInner.contains(el) || el === canvasInner)) {
+        canvasInner.classList.add("drag-over");
+        const secChildren = el.closest && el.closest(".section-children");
+        canvasInner.querySelectorAll(".section-children.drag-over").forEach(sc => { if (sc !== secChildren) sc.classList.remove("drag-over"); });
+        if (secChildren) secChildren.classList.add("drag-over");
+      } else {
+        canvasInner.classList.remove("drag-over");
+        canvasInner.querySelectorAll(".section-children.drag-over").forEach(sc => sc.classList.remove("drag-over"));
+      }
+    });
+
+    window.addEventListener("pointerup", async e => {
+      if (e.pointerType !== "touch" || !touchDrag) return;
+      const drag = touchDrag;
+      touchDrag = null;
+      canvasInner.classList.remove("drag-over");
+      canvasInner.querySelectorAll(".section-children.drag-over").forEach(sc => sc.classList.remove("drag-over"));
+      removeGhost();
+
+      const ev = lastTouch || e;
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (!el || !(canvasInner.contains(el) || el === canvasInner)) return;
+
+      const fake = { clientY: ev.clientY, target: el, closest: el.closest?.bind(el) };
+      const idx = getDropIndex(fake);
+      const parentId = getDropParentId(fake);
+      if (drag.kind === "toolbox") await addBlock(drag.type, idx, parentId);
+      if (drag.kind === "block") await moveBlock(drag.id, idx, parentId);
+    });
+
+    setStatus("Connecting to Firestore…", "info");
+    await ensureTemplateExists();
+    await loadBlocks();
+    void loadAssignmentWorkspace({ silent: true });
+  </script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

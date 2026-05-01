@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Admin &bull; Today Monitoring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-admin.js"></script>
+  <script src="../shared/theme-init.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f4f6fb;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f8fafc;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --border-color: #dbe2ea;
+      --accent-primary: #2563eb;
+      --accent-primary-soft: rgba(37, 99, 235, 0.12);
+      --accent-success: #16a34a;
+      --accent-success-bg: #dcfce7;
+      --accent-success-text: #166534;
+      --accent-warning: #d97706;
+      --accent-warning-bg: #fef3c7;
+      --accent-warning-text: #92400e;
+      --accent-danger: #dc2626;
+      --accent-danger-bg: #fee2e2;
+      --accent-danger-text: #991b1b;
+      --accent-neutral: #475569;
+      --accent-neutral-bg: #e2e8f0;
+      --accent-neutral-text: #334155;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+      --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
+      --hero-bg: radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 40%), linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+      --card-critical-border: rgba(220, 38, 38, 0.45);
+      --card-high-border: rgba(217, 119, 6, 0.45);
+      --card-medium-border: rgba(37, 99, 235, 0.35);
+      --card-calm-border: rgba(100, 116, 139, 0.28);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #020617;
+      --bg-secondary: #0b1120;
+      --bg-tertiary: #111827;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border-color: #1f2937;
+      --accent-primary: #60a5fa;
+      --accent-primary-soft: rgba(96, 165, 250, 0.16);
+      --accent-success: #22c55e;
+      --accent-success-bg: rgba(34, 197, 94, 0.18);
+      --accent-success-text: #86efac;
+      --accent-warning: #f59e0b;
+      --accent-warning-bg: rgba(245, 158, 11, 0.2);
+      --accent-warning-text: #fcd34d;
+      --accent-danger: #f87171;
+      --accent-danger-bg: rgba(248, 113, 113, 0.18);
+      --accent-danger-text: #fca5a5;
+      --accent-neutral: #94a3b8;
+      --accent-neutral-bg: rgba(148, 163, 184, 0.16);
+      --accent-neutral-text: #cbd5e1;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+      --shadow-md: 0 18px 36px rgba(0, 0, 0, 0.32);
+      --hero-bg: radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 40%), linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(2, 6, 23, 0.96) 100%);
+      --card-critical-border: rgba(248, 113, 113, 0.42);
+      --card-high-border: rgba(245, 158, 11, 0.42);
+      --card-medium-border: rgba(96, 165, 250, 0.32);
+      --card-calm-border: rgba(148, 163, 184, 0.22);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+    header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border-color); background: color-mix(in srgb, var(--bg-secondary) 92%, transparent); backdrop-filter: blur(14px); box-shadow: var(--shadow-sm); flex-wrap: wrap; }
+    .header-left { display: flex; flex-direction: column; gap: 4px; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    h1 { margin: 0; font-size: 16px; }
+    .sub { margin: 0; font-size: 12px; color: var(--text-secondary); }
+    .badge { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--accent-primary); background: var(--accent-primary-soft); color: var(--accent-primary); }
+    .btn, .back-btn, select, input[type="search"] { min-height: 44px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); padding: 10px 14px; font: inherit; }
+    .btn, .back-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; cursor: pointer; }
+    .btn:hover, .back-btn:hover { background: var(--bg-tertiary); }
+    select, input[type="search"] { min-width: 150px; }
+    input[type="search"] { flex: 1 1 240px; }
+    main { max-width: 1320px; margin: 0 auto; padding: 20px 16px 28px; display: grid; gap: 16px; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 22px; padding: 18px; box-shadow: var(--shadow-sm); }
+    .hero-card { background: var(--hero-bg); box-shadow: var(--shadow-md); }
+    .hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--accent-primary-soft); color: var(--accent-primary); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+    .title { font-size: 18px; font-weight: 750; letter-spacing: -0.01em; }
+    .hero-copy { max-width: 760px; margin-top: 8px; line-height: 1.55; }
+    .hero-stats { display: grid; grid-template-columns: repeat(2, minmax(170px, 1fr)); gap: 10px; flex: 1 1 340px; max-width: 420px; }
+    .hero-stat { padding: 14px; border-radius: 18px; border: 1px solid var(--border-color); background: color-mix(in srgb, var(--bg-secondary) 86%, transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+    .hero-number { display: block; font-size: 22px; font-weight: 780; letter-spacing: -0.02em; }
+    .hero-number--small { font-size: 15px; line-height: 1.35; }
+    .hero-label { display: block; margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .meta { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .summary-card { width: 100%; padding: 14px; border-radius: 18px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: inherit; text-align: left; cursor: pointer; transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease; }
+    .summary-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .summary-card.active { border-color: var(--accent-primary); background: color-mix(in srgb, var(--accent-primary-soft) 65%, var(--bg-tertiary)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent); }
+    .summary-card strong { display: block; font-size: 13px; margin-bottom: 8px; }
+    .summary-card-count { display: block; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+    .summary-card-note { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+    .summary-card[data-tone="critical"] .summary-card-count { color: var(--accent-danger); }
+    .summary-card[data-tone="warning"] .summary-card-count { color: var(--accent-warning); }
+    .summary-card[data-tone="success"] .summary-card-count { color: var(--accent-success); }
+    .summary-card[data-tone="neutral"] .summary-card-count { color: var(--accent-primary); }
+    .active-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; min-height: 24px; }
+    .filter-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-tertiary); padding: 6px 10px; font-size: 12px; color: var(--text-secondary); }
+    .monitor-results { display: grid; gap: 14px; }
+    .monitor-group { border: 1px solid var(--border-color); border-radius: 20px; background: var(--bg-tertiary); overflow: hidden; }
+    .group-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+    .group-title { font-size: 16px; font-weight: 760; }
+    .group-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .group-body { display: grid; gap: 12px; padding: 14px; }
+    .monitor-card { border: 1px solid var(--card-calm-border); border-radius: 18px; background: var(--bg-secondary); padding: 16px; box-shadow: var(--shadow-sm); }
+    .monitor-card.severity-critical { border-color: var(--card-critical-border); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-danger) 14%, transparent), var(--shadow-sm); }
+    .monitor-card.severity-high { border-color: var(--card-high-border); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-warning) 14%, transparent), var(--shadow-sm); }
+    .monitor-card.severity-medium { border-color: var(--card-medium-border); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 10%, transparent), var(--shadow-sm); }
+    .monitor-card-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .monitor-card-main { flex: 1 1 520px; min-width: 0; }
+    .monitor-card-side { width: min(240px, 100%); display: grid; justify-items: end; align-content: start; gap: 10px; }
+    .monitor-card-title { font-size: 18px; font-weight: 780; letter-spacing: -0.02em; }
+    .monitor-card-sub { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); }
+    .monitor-card-sub span { display: inline-flex; align-items: center; gap: 6px; }
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; border-radius: 999px; border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.01em; background: var(--bg-tertiary); color: var(--text-secondary); }
+    .pill.completed, .pill.clean { border-color: var(--accent-success); background: var(--accent-success-bg); color: var(--accent-success-text); }
+    .pill.outstanding, .pill.warning, .pill.reminder, .pill.note, .pill.due_soon { border-color: var(--accent-warning); background: var(--accent-warning-bg); color: var(--accent-warning-text); }
+    .pill.flagged, .pill.exception, .pill.overdue, .pill.urgent { border-color: var(--accent-danger); background: var(--accent-danger-bg); color: var(--accent-danger-text); }
+    .pill.in_progress, .pill.active, .pill.neutral { border-color: var(--accent-primary); background: var(--accent-primary-soft); color: var(--accent-primary); }
+    .pill.no_timer, .pill.not_started, .pill.skipped, .pill.none { border-color: var(--accent-neutral); background: var(--accent-neutral-bg); color: var(--accent-neutral-text); }
+    .summary-line { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-top: 14px; }
+    .summary-box { border: 1px solid var(--border-color); border-radius: 14px; background: var(--bg-tertiary); padding: 12px; min-height: 84px; }
+    .summary-box-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 8px; }
+    .summary-box-value { font-size: 14px; font-weight: 720; line-height: 1.45; }
+    .summary-box-value small { display: block; margin-top: 4px; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+    .monitor-details { margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 12px; }
+    .monitor-details summary { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--accent-primary); list-style: none; }
+    .monitor-details summary::-webkit-details-marker { display: none; }
+    .monitor-details-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .detail-card { border: 1px solid var(--border-color); border-radius: 14px; background: var(--bg-tertiary); padding: 12px; }
+    .detail-card h3 { margin: 0 0 10px; font-size: 13px; }
+    .detail-list { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+    .detail-list li { font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+    .detail-list strong { color: var(--text-primary); }
+    .timeline { display: grid; gap: 8px; }
+    .timeline-item { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text-secondary); border-bottom: 1px dashed color-mix(in srgb, var(--border-color) 85%, transparent); padding-bottom: 8px; }
+    .timeline-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .timeline-item strong { color: var(--text-primary); font-weight: 650; }
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; width: 100%; }
+    .queue-empty { border: 1px dashed var(--border-color); border-radius: 18px; padding: 26px; text-align: center; background: var(--bg-tertiary); color: var(--text-secondary); }
+    .muted-note { color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+    @media (max-width: 980px) {
+      .header-right { width: 100%; justify-content: flex-start; }
+      .hero-stats { max-width: none; width: 100%; }
+      .monitor-card-side { width: 100%; justify-items: start; }
+      .card-actions { justify-content: flex-start; }
+    }
+    @media (max-width: 720px) {
+      main { padding: 16px 12px 24px; }
+      .card { padding: 14px; border-radius: 18px; }
+      .filters { flex-direction: column; align-items: stretch; }
+      select, input[type="search"], .btn, .back-btn { width: 100%; }
+      .hero-stats { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .group-head { padding: 14px; }
+      .group-body { padding: 12px; }
+      .monitor-card { padding: 14px; }
+      .summary-line { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body data-role="admin">
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1>Admin &bull; Today Monitoring</h1>
+      <p id="scopeLine" class="sub">Admin scope: today</p>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading...</span>
+      <button id="refreshBtn" class="btn" type="button">Refresh</button>
+      <a class="back-btn" href="index.html">Back</a>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="btn theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+  <main>
+    <section class="card hero-card">
+      <div class="hero-row">
+        <div>
+          <div class="eyebrow">Operations Queue</div>
+          <div class="title" style="margin-top:10px;">Live Monitoring for Today</div>
+          <div class="meta hero-copy">This board is built for action rather than reporting. It prioritises overdue logbooks, reminders, staff notes, exceptions, and timer gaps so admin can see what needs attention first.</div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span id="visibleCount" class="hero-number">-</span>
+            <span class="hero-label">Visible logbooks</span>
+          </div>
+          <div class="hero-stat">
+            <span id="updatedAt" class="hero-number hero-number--small">Waiting for first load</span>
+            <span class="hero-label">Last refresh</span>
+          </div>
+        </div>
+      </div>
+      <div class="filters">
+        <select id="storeFilter"></select>
+        <select id="departmentFilter"></select>
+        <select id="statusFilter">
+          <option value="">All workflow states</option>
+          <option value="attention">Needs attention</option>
+          <option value="completed">Completed</option>
+          <option value="outstanding">Outstanding</option>
+          <option value="in_progress">In progress</option>
+          <option value="not_started">Not started</option>
+          <option value="skipped">Skipped</option>
+        </select>
+        <select id="attentionFilter">
+          <option value="">All attention types</option>
+          <option value="overdue">Overdue</option>
+          <option value="urgent">Due soon</option>
+          <option value="reminder">Reminder requested</option>
+          <option value="note">Staff note</option>
+          <option value="exception">Exception</option>
+          <option value="no_timer">No timer</option>
+          <option value="clean">Clean only</option>
+        </select>
+        <select id="groupByFilter">
+          <option value="store">Group by store</option>
+          <option value="department">Group by department</option>
+          <option value="attention">Group by attention</option>
+          <option value="status">Group by status</option>
+          <option value="none">No grouping</option>
+        </select>
+        <select id="sortFilter">
+          <option value="priority">Sort by priority</option>
+          <option value="due">Sort by due time</option>
+          <option value="updated">Sort by latest activity</option>
+          <option value="alphabetical">Sort alphabetically</option>
+        </select>
+        <input id="searchBox" type="search" placeholder="Search store, department, logbook, notes, reminder name..." />
+        <button id="clearFiltersBtn" class="btn" type="button">Clear filters</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <div class="title">Attention Overview</div>
+          <div id="summaryMeta" class="meta">Counts update with the current store, department, and search filters.</div>
+        </div>
+      </div>
+      <div id="summaryCards" class="summary-grid"></div>
+      <div id="activeFilters" class="active-filters"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <div class="title">Operations Queue</div>
+          <div id="resultsMeta" class="meta">Loading monitoring data...</div>
+        </div>
+        <div class="meta">Auto refresh every 60 seconds</div>
+      </div>
+      <div id="results" class="monitor-results"></div>
+    </section>
+  </main>
+  <script type="module" src="../shared/today-monitoring-page.js"></script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

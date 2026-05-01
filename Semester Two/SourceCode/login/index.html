@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login &bull; Friary Mill Logbooks</title>
+  <link rel="stylesheet" href="../shared/styles.css" />
+    <script src="../shared/theme-init.js"></script>
+  <style>
+    .login-page {
+      background:
+        radial-gradient(900px 420px at 50% 0%, rgba(37, 99, 235, 0.12), transparent 55%),
+        radial-gradient(700px 360px at 20% 20%, rgba(34, 197, 94, 0.09), transparent 55%),
+        radial-gradient(800px 420px at 80% 35%, rgba(245, 158, 11, 0.08), transparent 55%),
+        var(--bg-primary);
+    }
+    [data-theme="dark"] .login-page {
+      background:
+        radial-gradient(900px 420px at 50% 0%, rgba(59, 130, 246, 0.20), transparent 55%),
+        radial-gradient(700px 360px at 20% 20%, rgba(34, 197, 94, 0.10), transparent 55%),
+        radial-gradient(800px 420px at 80% 35%, rgba(251, 191, 36, 0.10), transparent 55%),
+        var(--bg-primary);
+    }
+
+    .login-topbar {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .login-page main {
+      width: min(720px, 100%);
+      margin: 0 auto;
+      padding: clamp(22px, 5vh, 38px) 16px 56px;
+    }
+
+    .brand {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .brand img {
+      width: clamp(200px, 55vw, 420px);
+      max-width: min(420px, 92vw);
+      height: auto;
+      display: block;
+    }
+
+    .brand .tagline {
+      margin: 0;
+      max-width: 52ch;
+      color: var(--text-secondary);
+      font-size: clamp(0.9rem, 2.1vw, 1rem);
+      line-height: 1.45;
+    }
+
+    .auth-shell {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      box-shadow: var(--shadow-card);
+      padding: 16px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .auth-card .status-row {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 14px;
+    }
+
+    .status-line {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .status-line strong {
+      color: var(--text-primary);
+    }
+
+    .status-meta {
+      display: grid;
+      gap: 4px;
+      min-width: 220px;
+    }
+
+    .status-note {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
+
+    .status-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .auth-card h2 {
+      margin: 0 0 10px 0;
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      padding: 6px;
+      border-radius: var(--radius-pill);
+      margin-bottom: 12px;
+    }
+
+    .segmented button {
+      height: 50px;
+      min-height: 50px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 650;
+      transition: background var(--transition), box-shadow var(--transition), color var(--transition);
+    }
+
+    .segmented button[aria-selected="true"] {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .segmented button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .panel {
+      display: none;
+    }
+    .panel.active {
+      display: block;
+    }
+
+    .form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      margin: 0 0 6px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .pin-input {
+      text-align: center;
+      letter-spacing: 0.35em;
+      font-size: 1.35rem;
+      height: 56px;
+      min-height: 56px;
+    }
+
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .pin-pad button {
+      height: 56px;
+      min-height: 56px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: 650;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .pin-pad button:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--border-hover);
+    }
+
+    .pin-pad button:active {
+      transform: translateY(1px);
+    }
+
+    .pin-pad button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .pin-pad button.action {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .message {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+    .message.success {
+      display: block;
+      border-color: var(--accent-success);
+      background: var(--accent-success-bg);
+      color: var(--accent-success);
+    }
+    .message.error {
+      display: block;
+      border-color: var(--accent-danger);
+      background: var(--accent-danger-bg);
+      color: var(--accent-danger);
+    }
+
+    .btn-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn-row .btn {
+      width: 100%;
+      height: 54px;
+      min-height: 54px;
+      font-size: 1rem;
+    }
+
+    .inline-hint {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .loading {
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: rgba(255,255,255,1);
+      animation: spin 0.9s linear infinite;
+    }
+
+    [data-theme="light"] .spinner {
+      border-color: rgba(0,0,0,0.22);
+      border-top-color: rgba(0,0,0,0.7);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 420px) {
+      .login-page main {
+        padding-top: 18px;
+      }
+
+      .brand {
+        gap: 10px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body class="login-page">
+  <div class="login-topbar">
+    <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+      <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+  </div>
+
+  <main>
+    <section class="brand" aria-label="Friary Mill">
+      <img src="../shared/logo.svg" alt="Friary Mill" class="brand-logo-img" />
+      <p class="tagline">Digital compliance logbooks for recording daily food safety and health checks.</p>
+    </section>
+
+    <div class="auth-shell">
+      <section id="auth-sections" class="card auth-card">
+        <div id="status-row" class="status-row" aria-live="polite" style="display:none;">
+          <div class="status-meta">
+            <div class="status-line">Status: <strong id="current-user">Not logged in</strong></div>
+            <div id="status-note" class="status-note" style="display:none;"></div>
+          </div>
+          <div class="status-actions">
+            <button id="continue-btn" class="btn primary" type="button" style="display:none;">Continue</button>
+            <button id="logout-btn" class="btn danger" type="button" style="display:none;">Log out</button>
+          </div>
+        </div>
+
+        <div id="sign-in-box">
+          <h2>Sign in</h2>
+
+          <div class="segmented" role="tablist" aria-label="Select login type">
+            <button type="button" id="tab-staff" role="tab" aria-selected="true" aria-controls="panel-staff">Staff PIN</button>
+            <button type="button" id="tab-admin" role="tab" aria-selected="false" aria-controls="panel-admin">Admin/Manager</button>
+          </div>
+
+          <div id="panel-staff" class="panel active" role="tabpanel" aria-labelledby="tab-staff">
+            <p class="inline-hint">Enter your 4-digit PIN. Use the keypad for fewer input errors on tablets.</p>
+            <form id="pin-login-form" class="form" autocomplete="off">
+              <div class="field">
+                <label for="pin-input">PIN</label>
+                <input
+                  type="password"
+                  id="pin-input"
+                  class="pin-input"
+                  inputmode="numeric"
+                  enterkeyhint="done"
+                  autocomplete="one-time-code"
+                  placeholder="4-digit PIN"
+                  pattern="[0-9]{4}"
+                  maxlength="4"
+                  required
+                />
+              </div>
+              <div class="pin-pad" aria-label="PIN keypad">
+                <button type="button" data-digit="1" aria-label="Digit 1">1</button>
+                <button type="button" data-digit="2" aria-label="Digit 2">2</button>
+                <button type="button" data-digit="3" aria-label="Digit 3">3</button>
+                <button type="button" data-digit="4" aria-label="Digit 4">4</button>
+                <button type="button" data-digit="5" aria-label="Digit 5">5</button>
+                <button type="button" data-digit="6" aria-label="Digit 6">6</button>
+                <button type="button" data-digit="7" aria-label="Digit 7">7</button>
+                <button type="button" data-digit="8" aria-label="Digit 8">8</button>
+                <button type="button" data-digit="9" aria-label="Digit 9">9</button>
+                <button type="button" class="action" data-action="clear" aria-label="Clear PIN">Clear</button>
+                <button type="button" data-digit="0" aria-label="Digit 0">0</button>
+                <button type="button" class="action" data-action="back" aria-label="Backspace">Del</button>
+              </div>
+              <div class="btn-row">
+                <button id="pin-submit" class="btn primary" type="submit" disabled>
+                  <span class="btn-label">Log in</span>
+                  <span class="spinner" style="display:none;" aria-hidden="true"></span>
+                </button>
+              </div>
+            </form>
+            <div id="pin-login-message" class="message"></div>
+          </div>
+
+          <div id="panel-admin" class="panel" role="tabpanel" aria-labelledby="tab-admin">
+            <p class="inline-hint">Admins and Managers sign in with email and password. You will be routed to the correct dashboard automatically.</p>
+            <form id="login-form" class="form" autocomplete="on">
+              <div class="field">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" placeholder="name@company.com" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+              </div>
+              <div class="field">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required />
+              </div>
+              <div class="btn-row">
+                <button id="login-submit" class="btn primary" type="submit">
+                  <span class="btn-label">Log in</span>
+                  <span class="spinner" style="display:none;" aria-hidden="true"></span>
+                </button>
+              </div>
+            </form>
+            <div id="login-message" class="message"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>

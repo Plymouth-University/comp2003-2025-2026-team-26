@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg">
+  <meta charset="UTF-8" />
+  <title>Admin &bull; Debug: Show All Entries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="../shared/guard-admin.js"></script>
+    <script src="../shared/theme-init.js"></script>
+    <script src="../shared/dialog.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border-color: #e5e7eb;
+      --border-hover: #d1d5db;
+      --accent-primary: #2563eb;
+      --accent-primary-hover: #1d4ed8;
+      --accent-success: #22c55e;
+      --accent-success-bg: #dcfce7;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #fee2e2;
+      --accent-warning: #f59e0b;
+      --accent-warning-bg: #fef3c7;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #171717;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --border-color: #262626;
+      --border-hover: #404040;
+      --accent-primary: #3b82f6;
+      --accent-primary-hover: #60a5fa;
+      --accent-success: #22c55e;
+      --accent-success-bg: #052e16;
+      --accent-danger: #ef4444;
+      --accent-danger-bg: #450a0a;
+      --accent-warning: #f59e0b;
+      --accent-warning-bg: #422006;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; transition: background 0.3s, color 0.3s; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:14px 16px; background:var(--bg-secondary); border-bottom:1px solid var(--border-color); box-shadow: var(--shadow-sm);
+      flex-wrap:wrap;
+    }
+    .header-left { display:flex; flex-direction:column; gap:4px; }
+    header h1 { margin:0; font-size:18px; letter-spacing:.02em; color:var(--text-primary); }
+    header .sub { margin:2px 0 0; font-size:12px; color:var(--text-secondary); }
+    .header-right { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-left:auto; }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border:1px solid var(--border-color); border-radius:50px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; cursor:pointer; min-height:44px; text-decoration:none; transition: background 0.2s; }
+    .back-btn:hover { background:var(--bg-tertiary); text-decoration:none; }
+    .theme-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border:1px solid var(--border-color); border-radius:50%; background:var(--bg-secondary); color:var(--text-primary); font-size:1.25rem; cursor:pointer; transition: background 0.2s; }
+    .theme-toggle:hover { background:var(--bg-tertiary); }
+    .theme-toggle:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:50px; border:1px solid #3b82f6; background:#dbeafe; color:#1d4ed8; white-space: nowrap; }
+    .badge.success { border-color: #22c55e; background: #dcfce7; color:#166534; }
+    .badge.error { border-color: #ef4444; background: #fee2e2; color:#991b1b; }
+    .badge.warning { border-color: #f59e0b; background: #fef3c7; color:#92400e; }
+    [data-theme="dark"] .badge { background:#172554; color:#93c5fd; border-color:#3b82f6; }
+    [data-theme="dark"] .badge.success { background:#14532d; color:#86efac; border-color:#22c55e; }
+    [data-theme="dark"] .badge.error { background:#450a0a; color:#fca5a5; border-color:#ef4444; }
+    [data-theme="dark"] .badge.warning { background:#78350f; color:#fcd34d; border-color:#f59e0b; }
+    main { max-width: 1400px; margin: 18px auto 42px; padding: 0 16px; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; box-shadow: var(--shadow-sm); margin-bottom: 16px; overflow-x:auto; }
+    .card-title { font-weight:600; font-size:16px; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+    .btn { border-radius:50px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); padding:10px 16px; font-size:14px; min-height:44px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition: background-color 0.2s, border-color 0.2s; }
+    .btn:hover { background:var(--bg-tertiary); }
+    .btn.primary { background:var(--accent-primary); border-color:var(--accent-primary); color:white; }
+    .btn.primary:hover { background:var(--accent-primary-hover); }
+    .btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+    .debug-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .debug-table th, .debug-table td { border:1px solid var(--border-color); padding:8px 10px; text-align:left; }
+    .debug-table th { background:var(--bg-tertiary); font-weight:600; color:var(--text-secondary); font-size:11px; text-transform:uppercase; letter-spacing:.04em; position:sticky; top:0; }
+    .debug-table tr:hover { background:var(--bg-tertiary); }
+    .debug-table tr.test-store { background:var(--accent-warning-bg); }
+    .debug-table tr.test-store:hover { background:#fde68a; }
+    [data-theme="dark"] .debug-table tr.test-store { background:#78350f; }
+    [data-theme="dark"] .debug-table tr.test-store:hover { background:#92400e; }
+    .status-pill { font-size:10px; padding:3px 8px; border-radius:50px; border:1px solid var(--border-color); display:inline-block; }
+    .status-pill.completed { border-color:#22c55e; background:#dcfce7; color:#166534; }
+    .status-pill.in_progress { border-color:#f59e0b; background:#fef3c7; color:#92400e; }
+    .status-pill.skipped { border-color:#9ca3af; background:#f3f4f6; color:#6b7280; }
+    .status-pill.not_started { border-color:var(--border-color); background:var(--bg-tertiary); color:var(--text-secondary); }
+    .status-pill.overdue { border-color:var(--accent-danger); background:var(--accent-danger-bg); color:#991b1b; font-weight:600; }
+    [data-theme="dark"] .status-pill.completed { background:#14532d; color:#86efac; }
+    [data-theme="dark"] .status-pill.in_progress { color:#fcd34d; background:#78350f; }
+    [data-theme="dark"] .status-pill.skipped { background:#374151; color:#9ca3af; }
+    [data-theme="dark"] .status-pill.overdue { background:#450a0a; color:#fca5a5; }
+    .empty { border:1px dashed var(--border-color); border-radius:10px; padding:24px; text-align:center; color:var(--text-secondary); background:var(--bg-tertiary); }
+    .hint { color:var(--text-secondary); font-size:12px; margin-top:8px; }
+    .meta { color:var(--text-secondary); font-size:11px; }
+    .warning-banner { background:var(--accent-warning-bg); border:1px solid var(--accent-warning); border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+    .warning-banner .icon { font-size:20px; }
+    .warning-banner .text { font-size:13px; color:#92400e; }
+    [data-theme="dark"] .warning-banner .text { color:#fcd34d; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+    .filter-input { background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; font-size:13px; min-width:200px; }
+    @media (max-width: 900px) {
+      .debug-table { font-size:11px; }
+      .debug-table th, .debug-table td { padding:6px; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/modern-refresh.css" />
+</head>
+<body>
+  <header>
+    <img src="../shared/logo.svg" alt="Friary Mill" class="header-logo" />
+    <div class="header-left">
+      <h1><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg> Admin &bull; Debug: Show All Entries</h1>
+      <div class="sub">Debug view of all logbook instances in the database.</div>
+    </div>
+    <div class="header-right">
+      <span id="status" class="badge">Loading...</span>
+      <a class="back-btn" href="index.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Back</a>
+      <button id="refreshBtn" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg> Refresh</button>
+      <button type="button" class="back-btn" id="logoutBtn">Log out</button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false"><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+    </div>
+  </header>
+
+  <main>
+    <div class="warning-banner">
+      <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <span class="text"><strong>Debug Mode:</strong> This page pages through the selected date window from the logbook_instances collection. Rows with test stores (containing "test" or "debug") are highlighted.</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>All Logbook Instances</span>
+        <span id="countBadge" class="badge">0 entries</span>
+      </div>
+      <div class="toolbar">
+        <input type="date" id="fromDateInput" class="filter-input" placeholder="From date" style="min-width:160px;" />
+        <input type="date" id="toDateInput" class="filter-input" placeholder="To date" style="min-width:160px;" />
+        <button id="applyRangeBtn" class="btn">Apply Range</button>
+        <input type="text" id="filterInput" class="filter-input" placeholder="Filter by store, template, date..." />
+        <button id="clearFilterBtn" class="btn">Clear</button>
+        <span id="pageInfo" class="meta">Page 1 of 1</span>
+        <button id="prevPageBtn" class="btn">Prev</button>
+        <button id="nextPageBtn" class="btn">Next</button>
+      </div>
+      <div id="tableContainer">
+        <div class="empty">Loading entries...</div>
+      </div>
+    </div>
+  </main>
+
+  <script type="text/plain" data-disabled="legacy-debug-entries-script">
+    import { db } from "../shared/logbook-app.js";
+    import {
+      collection, getDocs
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { clearElement, replaceWithMessage, safeClassToken } from "../shared/dom-utils.js";
+    import { waitForPageGuard } from "../shared/page-guard.js";
+
+    await waitForPageGuard();
+    const statusEl = document.getElementById("status");
+    const countBadge = document.getElementById("countBadge");
+    const tableContainer = document.getElementById("tableContainer");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const filterInput = document.getElementById("filterInput");
+    const clearFilterBtn = document.getElementById("clearFilterBtn");
+
+    let allEntries = [];
+
+    // Today's date for overdue comparison
+    const todayISO = "1970-01-01";
+
+    // Helper to extract a comparable timestamp from various Firestore/date values
+    function getTime(val) {
+      if (!val) return 0;
+      if (val.toDate && typeof val.toDate === 'function') return val.toDate().getTime();
+      if (val.seconds) return val.seconds * 1000;
+      const parsed = new Date(val);
+      return isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    }
+
+    // Format a timestamp value for display
+    function formatTimestamp(val) {
+      if (!val) return "-";
+      try {
+        if (val.toDate && typeof val.toDate === 'function') return val.toDate().toLocaleString();
+        if (val.seconds) return new Date(val.seconds * 1000).toLocaleString();
+        const parsed = new Date(val);
+        return isNaN(parsed.getTime()) ? "-" : parsed.toLocaleString();
+      } catch (e) {
+        return "-";
+      }
+    }
+
+    function getDisplayStatus(entry) {
+      const status = entry.status || "not_started";
+      if ((status === "not_started" || status === "in_progress") && entry.date && entry.date < todayISO) {
+        return "overdue";
+      }
+      return status;
+    }
+
+    // Test store patterns to highlight
+    const testPatterns = ["test", "debug", "demo", "sample", "dev"];
+
+    function isTestStore(storeId) {
+      if (!storeId) return false;
+      const lower = storeId.toLowerCase();
+      return testPatterns.some(p => lower.includes(p));
+    }
+
+    function setStatus(msg, kind="info") {
+      statusEl.textContent = msg;
+      statusEl.classList.remove("success", "error", "warning");
+      if (kind === "success") statusEl.classList.add("success");
+      if (kind === "error") statusEl.classList.add("error");
+      if (kind === "warning") statusEl.classList.add("warning");
+    }
+
+    async function loadAllEntries() {
+      setStatus("Loading...");
+      replaceWithMessage(tableContainer, "empty", "Loading all entries from database...");
+
+      try {
+        const snap = await getDocs(collection(db, "logbook_instances"));
+        allEntries = [];
+        snap.forEach(d => {
+          allEntries.push({ id: d.id, ...d.data() });
+        });
+
+        // Sort by updatedAt descending, then by date
+        allEntries.sort((a, b) => {
+          const aTime = getTime(a.updatedAt) || getTime(a.date);
+          const bTime = getTime(b.updatedAt) || getTime(b.date);
+          return bTime - aTime;
+        });
+
+        renderTable(allEntries);
+        countBadge.textContent = `${allEntries.length} entries`;
+        setStatus(`Loaded ${allEntries.length} entries`, "success");
+      } catch (e) {
+        console.error(e);
+        setStatus("Load failed", "error");
+        replaceWithMessage(tableContainer, "empty", "Failed to load entries. Please refresh and try again.");
+      }
+    }
+
+    function renderTable(entries) {
+      if (entries.length === 0) {
+        replaceWithMessage(tableContainer, "empty", "No entries found.");
+        return;
+      }
+
+      const table = document.createElement("table");
+      table.className = "debug-table";
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Instance ID</th>
+            <th>Store ID</th>
+            <th>Template ID</th>
+            <th>Template Name</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Updated At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      `;
+
+      const tbody = table.querySelector("#tableBody");
+
+      entries.forEach(entry => {
+        const tr = document.createElement("tr");
+        if (isTestStore(entry.storeId)) {
+          tr.className = "test-store";
+        }
+
+        const status = getDisplayStatus(entry);
+        const statusLabel = status === "overdue" ? "overdue" : (status || "not_started").replace("_", " ");
+        const updatedAt = formatTimestamp(entry.updatedAt);
+
+        const instanceCell = document.createElement("td");
+        const instanceCode = document.createElement("code");
+        instanceCode.style.fontSize = "10px";
+        instanceCode.textContent = entry.id || "-";
+        instanceCell.appendChild(instanceCode);
+        tr.appendChild(instanceCell);
+
+        const storeCell = document.createElement("td");
+        const storeStrong = document.createElement("strong");
+        storeStrong.textContent = entry.storeId || "-";
+        storeCell.appendChild(storeStrong);
+        tr.appendChild(storeCell);
+
+        const templateIdCell = document.createElement("td");
+        const templateCode = document.createElement("code");
+        templateCode.style.fontSize = "10px";
+        templateCode.textContent = entry.templateId || "-";
+        templateIdCell.appendChild(templateCode);
+        tr.appendChild(templateIdCell);
+
+        const templateNameCell = document.createElement("td");
+        templateNameCell.textContent = entry.templateName || "-";
+        tr.appendChild(templateNameCell);
+
+        const dateCell = document.createElement("td");
+        dateCell.textContent = entry.date || "-";
+        tr.appendChild(dateCell);
+
+        const statusCell = document.createElement("td");
+        const statusPill = document.createElement("span");
+        statusPill.className = `status-pill ${safeClassToken(status, "unknown")}`;
+        statusPill.textContent = statusLabel;
+        statusCell.appendChild(statusPill);
+        tr.appendChild(statusCell);
+
+        const updatedCell = document.createElement("td");
+        const updatedMeta = document.createElement("span");
+        updatedMeta.className = "meta";
+        updatedMeta.textContent = updatedAt;
+        updatedCell.appendChild(updatedMeta);
+        tr.appendChild(updatedCell);
+
+        const actionCell = document.createElement("td");
+        const viewButton = document.createElement("button");
+        viewButton.className = "btn view-btn";
+        viewButton.style.padding = "6px 10px";
+        viewButton.style.fontSize = "12px";
+        viewButton.style.minHeight = "32px";
+        viewButton.dataset.instanceId = entry.id || "";
+        viewButton.dataset.templateId = entry.templateId || "";
+        viewButton.dataset.storeId = entry.storeId || "";
+        viewButton.dataset.date = entry.date || "";
+        viewButton.textContent = "View";
+        actionCell.appendChild(viewButton);
+        tr.appendChild(actionCell);
+        tbody.appendChild(tr);
+      });
+
+      clearElement(tableContainer);
+      tableContainer.appendChild(table);
+
+      // Add click handlers
+      document.querySelectorAll(".view-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const instanceId = btn.dataset.instanceId;
+          const templateId = btn.dataset.templateId;
+          const storeId = btn.dataset.storeId;
+          const date = btn.dataset.date;
+          if (!templateId || !date) {
+            await styledAlert("Missing template ID or date for this entry.", "Missing Data");
+            return;
+          }
+          window.location.href = `view-entry.html?instanceId=${encodeURIComponent(instanceId)}&templateId=${encodeURIComponent(templateId)}&storeId=${encodeURIComponent(storeId)}&date=${encodeURIComponent(date)}`;
+        });
+      });
+    }
+
+    function filterEntries() {
+      const query = filterInput.value.toLowerCase().trim();
+      if (!query) {
+        renderTable(allEntries);
+        countBadge.textContent = `${allEntries.length} entries`;
+        return;
+      }
+
+      const filtered = allEntries.filter(e => {
+        const searchStr = [
+          e.id,
+          e.storeId,
+          e.templateId,
+          e.templateName,
+          e.date,
+          e.status
+        ].filter(Boolean).join(" ").toLowerCase();
+        return searchStr.includes(query);
+      });
+
+      renderTable(filtered);
+      countBadge.textContent = `${filtered.length} of ${allEntries.length} entries`;
+    }
+
+    filterInput.addEventListener("input", filterEntries);
+    clearFilterBtn.addEventListener("click", () => {
+      filterInput.value = "";
+      filterEntries();
+    });
+
+    refreshBtn.addEventListener("click", loadAllEntries);
+
+    // Auto-load on page open
+    loadAllEntries();
+  </script>
+  <script type="module" src="../shared/debug-entries-page.js"></script>
+  <script type="module" src="../shared/logout.js"></script>
+  <script src="../shared/theme.js"></script>
+</body>
+</html>
+
+
+
+
