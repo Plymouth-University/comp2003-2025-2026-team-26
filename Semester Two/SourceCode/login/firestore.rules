@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == "admin"
+      );
+    }
+
+    function isManager() {
+      return signedIn() && request.auth.token.role == "manager";
+    }
+
+    function isPrivileged() {
+      return isAdmin() || isManager();
+    }
+
+    match /stores/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /store_template_rules/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /logbook_templates/{templateId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+
+      match /blocks/{blockId} {
+        allow read: if signedIn();
+        allow write: if isAdmin();
+      }
+
+      match /{document=**} {
+        allow read: if signedIn();
+        allow write: if isAdmin();
+      }
+    }
+
+    match /logbook_instances/{docId} {
+      allow read, create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /log_entry_instances/{docId} {
+      allow read, create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /log_entries/{templateId}/{dateKey}/{document=**} {
+      allow read, create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /department_timer_rules/{docId} {
+      allow read: if signedIn();
+      allow write: if isPrivileged();
+    }
+
+    match /user_activity_logs/{docId} {
+      allow create: if signedIn();
+      allow read: if isPrivileged();
+      allow delete: if isAdmin();
+      allow update: if false;
+    }
+
+    match /archived_logbook_instances/{docId} {
+      allow read: if isPrivileged();
+      allow write: if isAdmin();
+    }
+
+    match /archived_log_entries/{docId} {
+      allow read: if isPrivileged();
+      allow write: if isAdmin();
+    }
+
+    match /system_jobs/{docId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

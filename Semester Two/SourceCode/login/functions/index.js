@@ -560,7 +560,7 @@ async function syncAccountClaims(uid, updates = {}) {
   await auth.setCustomUserClaims(normalizedUid, buildScopedClaims(existingClaims, updates));
 }
 
-async function getCallerRole(request) {
+function getCallerRole(request) {
   const uid = request.auth?.uid || "";
   const token = request.auth?.token || {};
   const claimRole = token.role;
@@ -569,17 +569,12 @@ async function getCallerRole(request) {
   if (token.admin === true) return "admin";
   if (uid.startsWith("staff_")) return "staff";
 
-  // Backward-compatible role source for legacy accounts (stored by admin tools).
-  const meta = await readAccountMeta(uid);
-  const metaRole = meta?.role;
-  if (typeof metaRole === "string" && metaRole.trim()) return metaRole.trim().toLowerCase();
-
   return null;
 }
 
 async function assertAdmin(request) {
   assertAuthenticated(request);
-  const role = await getCallerRole(request);
+  const role = getCallerRole(request);
   if (role !== "admin") {
     throw new HttpsError("permission-denied", "Admin access required.");
   }
@@ -593,7 +588,7 @@ exports.getMyAccount = onCall(async (request) => {
   const token = request.auth?.token || {};
 
   const meta = await readAccountMeta(uid);
-  const role = (await getCallerRole(request)) || (uid.startsWith("staff_") ? "staff" : "manager");
+  const role = getCallerRole(request);
   const store = cleanString(meta.store || token.store || token.storeId);
   const department = cleanString(meta.department || token.department);
 
@@ -719,13 +714,17 @@ exports.adminUpdateAccountProfile = onCall(async (request) => {
   const currentMeta = await readAccountMeta(uid);
 
   try {
+    const userRecord = await auth.getUser(uid);
+    const existingClaims = userRecord?.customClaims || {};
+    const existingRole = uid.startsWith("staff_") ? "staff" : cleanString(existingClaims.role);
+
     await db.ref(`accounts/${uid}`).update(updates);
     if (typeof name === "string") {
       await auth.updateUser(uid, { displayName: name || undefined });
     }
 
     await syncAccountClaims(uid, {
-      ...(currentMeta.role != null ? { role: currentMeta.role } : {}),
+      ...(existingRole ? { role: existingRole } : {}),
       ...(store != null || currentMeta.store != null ? { store: store != null ? store : currentMeta.store } : {}),
       ...(department != null || currentMeta.department != null
         ? { department: department != null ? department : currentMeta.department }

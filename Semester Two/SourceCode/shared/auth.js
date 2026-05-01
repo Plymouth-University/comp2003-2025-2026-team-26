@@ -20,7 +20,7 @@ const loginFirebaseConfig = {
 };
 
 const LOGIN_APP_NAME = "friarymill-login-app";
-const DEFAULT_EMAIL_ROLE = "manager";
+const DEFAULT_SESSION_ROLE = "default";
 const SESSION_TIMEOUT_MINUTES_BY_ROLE = Object.freeze({
   staff: 30,
   manager: 30,
@@ -136,7 +136,7 @@ function readStoredNumber(key) {
 }
 
 function resolveSessionTimeoutMinutes(role) {
-  const normalised = normaliseRole(role) || DEFAULT_EMAIL_ROLE;
+  const normalised = normaliseRole(role) || DEFAULT_SESSION_ROLE;
   const specific = readStoredNumber(`${SESSION_TIMEOUT_STORAGE_PREFIX}${normalised}`);
   if (specific && specific > 0) return Math.max(1, specific);
 
@@ -522,7 +522,7 @@ export async function loginAdmin(email, password) {
   const normalisedEmail = normaliseSignInIdentifier(email);
   const cred = await signInWithEmailAndPassword(auth, normalisedEmail, String(password || ""));
   const role = await resolveRole(cred.user, true);
-  cacheResolvedRole(cred.user, role || DEFAULT_EMAIL_ROLE);
+  cacheResolvedRole(cred.user, role);
   return cred.user;
 }
 
@@ -556,7 +556,7 @@ export function onAuthChanged(callback) {
     }
 
     resolveRole(user, false)
-      .then((role) => cacheResolvedRole(user, role || inferRoleFromUid(user) || DEFAULT_EMAIL_ROLE))
+      .then((role) => cacheResolvedRole(user, role || inferRoleFromUid(user)))
       .catch(() => cacheResolvedRole(user, inferRoleFromUid(user) || null))
       .finally(() => callback(user));
   });
